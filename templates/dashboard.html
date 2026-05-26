@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | NextHit Market Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+    
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                        
+                        <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                        
+                        NEXT<span style="color: var(--accent)">HIT</span>
+                    </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+                    
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item"><a class="nav-link text-warning fw-bold" href="{{ url_for('history') }}"><i class="bi bi-shield-lock me-1"></i>Admin</a></li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <section>
+        <div class="container" style="max-width: 1000px; padding-bottom: 50px;">
+            
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
+                <div>
+                    <h2 class="fw-bold m-0" style="color: var(--text-main);">Developer Dashboard</h2>
+                    <p style="color: var(--text-dim); margin-top: 5px;">Welcome back, <span class="text-white fw-bold">{{ username }}</span>.</p>
+                </div>
+            </div>
+
+            <div class="row mb-5 g-4">
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ total_runs }}</div>
+                        <div class="stat-label">Total Predictions Run</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-number">{{ high_success }}</div>
+                        <div class="stat-label">High Success Ideas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 p-md-5">
+                <h4 class="fw-bold mb-4" style="color: var(--text-main);">Prediction History</h4>
+
+                <!-- Filter Buttons -->
+                <div class="btn-group" role="group" aria-label="History Filter">
+                    <button type="button" class="btn btn-sm btn-outline-secondary active filter-btn" id="filter-all" onclick="filterHistory('all')" style="width: 80px;">All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" id="filter-saved" onclick="filterHistory('saved')" style="width: 100px;">
+                        <i class="bi bi-bookmark-fill me-1"></i> Saved
+                    </button>
+                </div>
+                
+                {% if history %}
+                <div class="table-responsive" style="margin-top: 40px;">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Base Price</th>
+                                <th>Genres & Tags</th>
+                                <th>Predicted Tier</th>
+                                <th><!-- Empty header for the bookmark icon --></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in history %}
+                            <tr class="history-row">
+                                </td>
+                                <td style="color: var(--text-dim); font-size: 0.9rem;">
+                                    {{ row.created_at.strftime('%b %d, %Y') if row.created_at else 'N/A' }}
+                                </td>
+                                <td class="fw-bold" style="color: var(--accent);">${{ row.price }}</td>
+                                <td style="font-size: 0.85rem; color: #aaa;">
+                                    {{ row.genres | truncate(30) if row.genres else 'None' }} <br>
+                                    <span style="color: #666;">{{ row.tags | truncate(30) if row.tags else '' }}</span>
+                                </td>
+                                <td>
+                                    {% if 'High' in row.prediction_result %}
+                                        <span class="badge-tier tier-high">High</span>
+                                    {% elif 'Moderate' in row.prediction_result %}
+                                        <span class="badge-tier tier-moderate">Moderate</span>
+                                    {% else %}
+                                        <span class="badge-tier tier-low">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button onclick="toggleBookmark({{ row['id'] }}, this)" class="btn-bookmark {% if row['is_bookmarked'] %}active{% endif %}">
+                                        <i class="bi {% if row['is_bookmarked'] %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-folder-x mb-3 d-block" style="font-size: 3rem; color: #333;"></i>
+                    <p style="color: var(--text-dim);">You haven't run any predictions yet.</p>
+                    <a href="/#predict" class="btn btn-outline-secondary mt-2">Run your first prediction</a>
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </section>
+
+
+    <script>
+    function toggleBookmark(recordId, btnElement) {
+        // Ping the Flask route we made in app.py
+        fetch(`/toggle_bookmark/${recordId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const icon = btnElement.querySelector('i');
+                
+                // Toggle the CSS classes based on the database response
+                if (data.is_bookmarked) {
+                    btnElement.classList.add('active');
+                    icon.classList.remove('bi-bookmark');
+                    icon.classList.add('bi-bookmark-fill');
+                } else {
+                    btnElement.classList.remove('active');
+                    icon.classList.remove('bi-bookmark-fill');
+                    icon.classList.add('bi-bookmark');
+                }
+            } else {
+                console.error("Server refused to bookmark:", data.message);
+                alert("Error updating bookmark.");
+            }
+        })
+        .catch(error => console.error('Network Error:', error));
+    }
+
+    function filterHistory(filterType) {
+        // 1. Update the button styles so the user knows which tab is active
+        const btnAll = document.getElementById('filter-all');
+        const btnSaved = document.getElementById('filter-saved');
+
+        if (filterType === 'all') {
+            btnAll.classList.add('active', 'text-white');
+            btnAll.style.backgroundColor = '#333';
+            btnSaved.classList.remove('active', 'text-white');
+            btnSaved.style.backgroundColor = 'transparent';
+        } else {
+            btnSaved.classList.add('active', 'text-white');
+            btnSaved.style.backgroundColor = '#333';
+            btnAll.classList.remove('active', 'text-white');
+            btnAll.style.backgroundColor = 'transparent';
+        }
+
+        // 2. Loop through every row and show/hide based on the bookmark status
+        const rows = document.querySelectorAll('.history-row');
+        
+        rows.forEach(row => {
+            if (filterType === 'all') {
+                // Show everything
+                row.style.display = ''; 
+            } else if (filterType === 'saved') {
+                // Check if the bookmark button inside this row has the "active" class
+                const bookmarkBtn = row.querySelector('.btn-bookmark');
+                if (bookmarkBtn && bookmarkBtn.classList.contains('active')) {
+                    row.style.display = ''; // Keep it visible
+                } else {
+                    row.style.display = 'none'; // Hide it instantly
+                }
+            }
+        });
+    }
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NextHit | Predictive Market Intelligence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
+</head>
+<body data-bs-spy="scroll" data-bs-target=".navbar">
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+                <div class="container">
+                    <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                        
+                        <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                        
+                        NEXT<span style="color: var(--accent)">HIT</span>
+                    </a>
+                    <div class="collapse navbar-collapse justify-content-end">
+                        <ul class="navbar-nav align-items-center">
+                            <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                            <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+
+                            {% if session.get('loggedin') %}
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                                
+                                {% if session.get('role') == 'admin' %}
+                                    <li class="nav-item"><a class="nav-link text-warning fw-bold" href="{{ url_for('history') }}"><i class="bi bi-shield-lock me-1"></i>Admin</a></li>
+                                {% endif %}
+                                
+                                <li class="nav-item ms-lg-3">
+                                    <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                                </li>
+                            {% else %}
+                                <li class="nav-item ms-lg-3">
+                                    <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                                </li>
+                            {% endif %} 
+
+                        </ul>
+                    </div>
+                </div>
+    </nav>
+
+    <section id="home" class="text-center">
+        <div class="container">
+            <h1 class="display-3 fw-bold mb-4">Master the <span style="color: var(--accent)">Market.</span></h1>
+            <p class="lead text-dim mx-auto" style="max-width: 700px;">Level the playing field. Actionable market forecasting for indie Steam developers, powered by ensemble learning.</p>
+            <a href="#predict" class="btn btn-primary mt-4">Launch Predictor</a>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2 class="mb-4">Predicting Success in a <br>Crowded Industry.</h2>
+                    <p class="text-dim">With thousands of games launching monthly, developers need more than luck. This tool provides an objective analysis of market trends based on historical Steam performance.</p>
+                </div>
+                <div class="col-md-6 text-center">
+                    <div class="p-5 border border-secondary rounded text-accent" style="color: var(--accent); font-size: 3rem; font-weight: bold;">0.85 ACCURACY</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="logic" style="background-color: #161616;">
+        <div class="container">
+            <h2 class="text-center mb-5">Technical Core</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100">
+                        <h5 class="text-white">Weighted XGBoost</h5>
+                        <p class="small text-dim">Utilizes a boosting-based ensemble method, balanced with SMOTE, to prioritize high-success indicators while maintaining an 0.85 mean accuracy.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100">
+                        <h5 class="text-white">Feature Influence</h5>
+                        <p class="small text-dim">Analyzes specific genre/tag clusters like "Action, Indie" to weigh their historical commercial impact.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100">
+                        <h5 class="text-white">Success Tiers</h5>
+                        <p class="small text-dim">Classifies data into High, Moderate, and Low success based on complex pre-launch metadata interactions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="predict" class="py-5">
+        <div class="container" style="max-width: 800px;">
+            
+            {% if prediction_text %}
+
+            {% set tier_class = 'high' %}
+            {% if 'Moderate' in prediction_text %}
+                {% set tier_class = 'moderate' %}
+            {% elif 'Low' in prediction_text %}
+                {% set tier_class = 'low' %}
+            {% endif %}
+
+            <div class="card p-4 mb-4 result-card-{{ tier_class }}" style="background: #161616;">
+
+                    <!-- Row 1: The Prediction -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="mb-0 text-white small fw-bold">MARKET POTENTIAL:</h6>
+                        <span class="result-text text-tier-{{ tier_class }} fs-4 fw-bold">
+                            {{ prediction_text }}
+                        </span>
+                    </div>
+
+                    <!-- Row 2: The Confidence Score -->
+                    <div class="mt-3 pt-3 border-top border-secondary">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <p class="text-white small fw-bold mb-0" style="font-size: 0.7rem; letter-spacing: 1px;">PREDICTION CONFIDENCE:</p>
+                            <span class="text-white small">{{ "%.2f"|format(confidence) }}%</span>
+                        </div>
+                        <div class="progress" style="height: 8px; background-color: #333; border-radius: 10px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                style="width: {{ confidence }}%; 
+                                        background-color: {% if 'High' in prediction_text %}#00ff88{% elif 'Moderate' in prediction_text %}#00d1ff{% else %}#ff4b2b{% endif %};">
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="mt-3 pt-3 border-top border-secondary">
+                        <p class="text-white small fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">SUCCESS DRIVERS:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for item in top_influencers %}
+                            <div class="badge bg-dark border border-secondary px-3 py-2" style="font-size: 0.85rem;">
+                                <span style="color: var(--accent);">#</span> {{ item.name }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    {% if recommendations %}
+                                    <div class="mt-4 pt-3 border-top border-secondary">
+                                        <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">ACTIONABLE NEXT STEPS:</p>
+                                        
+                                        <ul class="list-unstyled mb-0" style="font-size: 0.85rem; color: var(--text-dim);">
+                                            {% for rec in recommendations %}
+                                            <li class="mb-2 d-flex align-items-start">
+                                                <i class="bi bi-arrow-right-short me-2" style="color: var(--accent); font-size: 1.2rem; line-height: 1;"></i>
+                                                <span>{{ rec }}</span>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                    {% endif %}
+
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">COMPETITIVE BENCHMARKS:</p>
+                        
+                        <div class="row g-3">
+                            {% if similar_games %}
+                                {% for game in similar_games %}
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center p-2 rounded benchmark-card" style="background: rgba(255,255,255,0.03); border: 1px solid #333;">
+                                        <!-- Use brackets for 'Header Image' and 'Name' keys -->
+                                        <img src="{{ game['Header image'] }}" alt="{{ game['Name'] }}" style="width: 120px; border-radius: 4px; margin-right: 15px;">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0 text-white" style="font-size: 0.9rem;">{{ game['Name'] }}</h6>
+                                            <span class="text-accent small" style="font-size: 0.75rem;">${{ game['Price'] }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <!-- This text is now lighter (#aaa) to be visible on dark background -->
+                                <p class="small italic" style="color: #aaa;">No similar historical matches found for this specific configuration.</p>
+                            {% endif %}
+                        </div>
+                    </div>                 
+
+            </div>
+            {% endif %}
+
+            <div class="card p-5 mx-auto" style="background: #1a1a1a; border: 1px solid #333;">
+                <h3 class="text-center mb-4 text-white">Input Metadata</h3>
+                
+                <form action="/predict#predict" method="POST">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Base Price ($)
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Planned launch price of your game."></i>
+                            </label>
+                            <input type="number" step="0.01" min="0" name="price" class="form-control" required
+                                placeholder="e.g., 19.99"
+                                value="{{ original_input['price'] if original_input else '0.00' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Release Month
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Target launch window (influences seasonal buying)."></i>
+                            </label>
+                            <select name="month" class="form-control">
+                                {% for i in range(1, 13) %}
+                                <option value="{{ i }}" {% if original_input and original_input.get('month')|int == i %}selected{% endif %}>
+                                    {{ ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i-1] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                Languages
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Number of supported UI/Subtitle languages."></i>
+                            </label>
+                            <input type="number" min="1" max="50" name="languages" class="form-control" required
+                                   value="{{ original_input['languages'] if original_input else '1' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                Platforms
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Total supported PC platforms (Win, Mac, Linux). Max is 3."></i>
+                            </label>
+                            <input type="number" min="1" max="3" name="platforms" class="form-control" required
+                                   value="{{ original_input['platforms'] if original_input else '1' }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                Developers
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Number of developer studios involved."></i>
+                            </label>
+                            <input type="number" min="1" max="10" name="devs" class="form-control" required
+                                   value="{{ original_input['devs'] if original_input else '1' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Achievements
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Planned number of Steam achievements."></i>
+                            </label>
+                            <input type="number" min="0" name="achievements" class="form-control"
+                                   value="{{ original_input['achievements'] if original_input else '0' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                DLCs
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Number of planned DLCs at launch."></i>
+                            </label>
+                            <input type="number" min="0" name="dlc" class="form-control"
+                                   value="{{ original_input['dlc'] if original_input else '0' }}">
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mb-4 mt-2">
+                        <input class="form-check-input" type="checkbox" role="switch" id="ws" name="website"
+                            {% if original_input and original_input.get('website') == 'on' %}checked{% endif %}>
+                        <label class="form-check-label ms-2" for="ws" style="color: var(--accent); font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px;">Official Website Available</label>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label d-block">
+                            Genres
+                            <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Click to toggle core genres."></i>
+                        </label>
+                        <div class="pill-container">
+                            {% set genre_list = ['Action', 'Adventure', 'Casual', 'Indie', 'Massively Multiplayer', 'RPG', 'Racing', 'Simulation', 'Sports', 'Strategy'] %}
+                            {% for g in genre_list %}
+                            <input type="checkbox" class="btn-check" id="genre_{{ loop.index }}" name="genres" value="{{ g }}" 
+                                {% if original_input and g in original_input.get('genres', '') %}checked{% endif %}>
+                            <label class="btn btn-custom-pill" for="genre_{{ loop.index }}">{{ g }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label d-block">
+                            Tags
+                            <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Click to toggle secondary game descriptors."></i>
+                        </label>
+                        <div class="pill-container tag-container-scroll">
+                            {% set tag_list = ['Singleplayer', 'Multiplayer', 'Atmospheric', 'Story Rich', '2D', '3D', 'Fantasy', 'Sci-fi', 'Open World', 'Early Access'] %}
+                            {% for t in tag_list %}
+                            <input type="checkbox" class="btn-check" id="tag_{{ loop.index }}" name="tags" value="{{ t }}"
+                                {% if original_input and t in original_input.get('tags', '') %}checked{% endif %}>
+                            <label class="btn btn-custom-pill" for="tag_{{ loop.index }}">{{ t }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-4 border-top border-secondary pt-4">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Analyze Potential</button>
+                        <a href="{{ url_for('reset') }}" class="btn btn-outline-secondary px-4">Reset</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Wait for HTML to load, then initialize tooltips
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+              return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

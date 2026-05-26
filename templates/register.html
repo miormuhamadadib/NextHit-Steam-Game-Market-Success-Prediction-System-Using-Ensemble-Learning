@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | NextHit Market Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand fw-bold" style="color: var(--accent); font-size: 1.5rem;" href="/">✦ NextHit</a>
+        </div>
+    </nav>
+
+    <section>
+        <div class="container d-flex justify-content-center">
+            
+            <div class="card" style="width: 100%; max-width: 420px; padding: 3rem !important; border-color: #333;">
+                <h2 class="fw-bold mb-2 text-center" style="color: var(--text-main);">Create Account</h2>
+                <p class="text-center mb-4" style="color: var(--text-dim);">Join to start forecasting game success.</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }} fw-bold text-center" role="alert" style="background: transparent; border: 1px solid currentColor;">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <form action="{{ url_for('register') }}" method="POST" id="predict">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Choose a Username</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="e.g. IndieDev99" required>
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="position-relative"> 
+                            <input type="password" class="form-control pe-5" id="password" name="password" placeholder="••••••••" required>
+                            
+                            <i class="bi bi-eye position-absolute top-50 end-0 translate-middle-y me-3" 
+                                id="togglePassword" 
+                                style="cursor: pointer; color: var(--text-dim); font-size: 1.2rem; transition: color 0.2s;">
+                            </i>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">REGISTER</button>
+                </form>
+
+                <div class="text-center mt-4" style="font-size: 0.9rem; color: var(--text-dim);">
+                    Already have an account? <a href="{{ url_for('login') }}" style="color: var(--accent); font-weight: 600; text-decoration: none;">Log in here</a>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+
+        togglePassword.addEventListener('click', function (e) {
+            // Toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // Toggle the icon visually (swaps between open eye and closed eye with a slash)
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+            
+            // Make it glow green when active
+            if(type === 'text') {
+                this.style.color = 'var(--accent)';
+            } else {
+                this.style.color = 'var(--text-dim)';
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global History | SteamPredict Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="32" height="32" class="me-2 rounded">
+                NEXT<span style="color: var(--accent)">HIT</span>
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">My History</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item"><a class="nav-link text-warning fw-bold" href="{{ url_for('history') }}"><i class="bi bi-shield-lock me-1"></i>Global History</a></li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %} 
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <button onclick="topFunction()" id="scrollTopBtn" title="Go to top"><i class="bi bi-chevron-up"></i></button>
+
+    <section>
+        <div class="container history-content">
+            <div class="d-flex justify-content-between align-items-end mb-5">
+                <div>
+                    <h2 class="fw-bold m-0 text-white">Prediction <span style="color: var(--accent)">Logs</span></h2>
+                    <p class="text-dim mt-1 mb-0">Global admin view: Full metadata and model influence history.</p>
+                </div>
+                
+                <form action="/clear_history" method="POST" onsubmit="return confirm('Are you sure you want to delete all prediction history? This cannot be undone.');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm fw-bold px-3 py-2 border-danger text-danger">
+                        <i class="bi bi-trash3 me-1"></i> Clear All History
+                    </button>
+                </form>
+            </div>
+            
+            <div class="card p-0 overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-dark history-table mb-0 text-center align-middle" style="background-color: var(--card-bg);">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Price</th>
+                                <th>Genres</th>
+                                <th>Tags</th>
+                                <th>Result</th>
+                                <th>Primary Drivers</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                            <tr>
+                                <td class="text-dim">#{{ row[0] }}</td>
+                                <td class="fw-bold" style="color: var(--accent);">${{ "%.2f"|format(row[1]) }}</td>
+                                <td>
+                                    <div class="data-cell-text mx-auto"><span style="color: var(--accent)">G:</span> {{ row[2] | truncate(30) }}</div>
+                                </td>
+                                <td>
+                                    <div class="data-cell-text mx-auto"><span style="color: var(--accent)">T:</span> {{ row[3] | truncate(30) }}</div>
+                                </td>
+                                <td>
+                                    {% if 'High' in row[4] %}
+                                        <span class="badge-tier tier-high">High</span>
+                                    {% elif 'Moderate' in row[4] %}
+                                        <span class="badge-tier tier-moderate">Moderate</span>
+                                    {% else %}
+                                        <span class="badge-tier tier-low">Low</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1 flex-wrap justify-content-center">
+                                        {% if row[5] and row[5] != 'N/A' %}
+                                            {% for driver in row[5].split(',') %}
+                                                <span class="driver-tag">{{ driver.strip() }}</span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted small italic">Processing...</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="text-dim" style="font-size: 0.75rem; white-space: nowrap;">
+                                    {{ row[6].strftime('%Y-%m-%d %H:%M') if row[6] else 'Recent' }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        let mybutton = document.getElementById("scrollTopBtn");
+        window.onscroll = function() { if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) { mybutton.style.display = "block"; } else { mybutton.style.display = "none"; } };
+        function topFunction() { window.scrollTo({top: 0, behavior: 'smooth'}); }
+    </script>
+</body>
+</html>
