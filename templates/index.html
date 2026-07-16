@@ -12,82 +12,147 @@
 </head>
 <body data-bs-spy="scroll" data-bs-target=".navbar">
 
-    <nav class="navbar navbar-expand-lg sticky-top">
-                <div class="container">
-                    <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
-                        
-                        <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
-                        
-                        NEXT<span style="color: var(--accent)">HIT</span>
-                    </a>
-                    <div class="collapse navbar-collapse justify-content-end">
-                        <ul class="navbar-nav align-items-center">
-                            <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+    <!-- Scroll Progress Bar -->
+    <div class="scroll-progress" id="scrollProgress"></div>
 
-                            {% if session.get('loggedin') %}
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                                
-                                {% if session.get('role') == 'admin' %}
-                                    <li class="nav-item"><a class="nav-link text-warning fw-bold" href="{{ url_for('history') }}"><i class="bi bi-shield-lock me-1"></i>Admin</a></li>
-                                {% endif %}
-                                
-                                <li class="nav-item ms-lg-3">
-                                    <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
-                                </li>
-                            {% else %}
-                                <li class="nav-item ms-lg-3">
-                                    <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
-                                </li>
-                            {% endif %} 
+    <nav class="navbar navbar-expand-lg sticky-top" id="mainNav">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                NEXT<span style="color: var(--accent)">HIT</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
 
-                        </ul>
-                    </div>
-                </div>
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i class="bi bi-people me-2"></i>Users
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                        <i class="bi bi-graph-up me-2"></i>Model Performance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
+                                        <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                        <i class="bi bi-clock-history me-2"></i>All Predictions
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
+                                        <i class="bi bi-heart-pulse me-2"></i>System Health
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                        <i class="bi bi-download me-2"></i>Export Data
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %} 
+
+                </ul>
+            </div>
+        </div>
     </nav>
 
-    <section id="home" class="text-center">
+    <!-- Section Connector -->
+    <div class="section-connector"></div>
+
+    <section id="home" class="text-center grid-bg">
         <div class="container">
-            <h1 class="display-3 fw-bold mb-4">Master the <span style="color: var(--accent)">Market.</span></h1>
+            <!-- Floating Orbs -->
+            <div class="glow-orb glow-orb-1"></div>
+            <div class="glow-orb glow-orb-2"></div>
+            
+            <h1 class="display-3 fw-bold mb-4" id="heroText">Master the <span style="color: var(--accent)">Market.</span></h1>
             <p class="lead text-dim mx-auto" style="max-width: 700px;">Level the playing field. Actionable market forecasting for indie Steam developers, powered by ensemble learning.</p>
-            <a href="#predict" class="btn btn-primary mt-4">Launch Predictor</a>
+            <a href="#predict" class="btn btn-primary mt-4">Launch Predictor <i class="bi bi-arrow-right ms-2"></i></a>
         </div>
     </section>
 
-    <section id="about">
+    <!-- Section Connector -->
+    <div class="section-connector"></div>
+
+    <section id="about" class="grid-bg">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-md-6">
                     <h2 class="mb-4">Predicting Success in a <br>Crowded Industry.</h2>
                     <p class="text-dim">With thousands of games launching monthly, developers need more than luck. This tool provides an objective analysis of market trends based on historical Steam performance.</p>
+                    <div class="mt-4">
+                        <span class="badge-tier tier-high me-2">High Accuracy</span>
+                        <span class="badge-tier tier-moderate me-2">Real-time Analysis</span>
+                        <span class="badge-tier tier-low">Actionable Insights</span>
+                    </div>
                 </div>
                 <div class="col-md-6 text-center">
-                    <div class="p-5 border border-secondary rounded text-accent" style="color: var(--accent); font-size: 3rem; font-weight: bold;">0.85 ACCURACY</div>
+                    <div class="p-5 border border-secondary rounded text-accent" style="color: var(--accent); font-size: 3rem; font-weight: bold; position: relative; overflow: hidden;">
+                        0.85 ACCURACY
+                        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: var(--text-dim); font-weight: normal;">
+                            <i class="bi bi-graph-up-arrow me-1"></i>Ensemble Learning
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <section id="logic" style="background-color: #161616;">
+    <!-- Section Connector -->
+    <div class="section-connector"></div>
+
+    <section id="logic" style="background-color: #161616;" class="grid-bg">
         <div class="container">
             <h2 class="text-center mb-5">Technical Core</h2>
             <div class="row g-4">
                 <div class="col-md-4">
-                    <div class="p-4 border border-secondary h-100">
+                    <div class="p-4 border border-secondary h-100" style="transition: all 0.3s ease;">
+                        <div class="mb-3" style="font-size: 2rem; color: var(--accent);">
+                            <i class="bi bi-cpu"></i>
+                        </div>
                         <h5 class="text-white">Weighted XGBoost</h5>
                         <p class="small text-dim">Utilizes a boosting-based ensemble method, balanced with SMOTE, to prioritize high-success indicators while maintaining an 0.85 mean accuracy.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-4 border border-secondary h-100">
+                    <div class="p-4 border border-secondary h-100" style="transition: all 0.3s ease;">
+                        <div class="mb-3" style="font-size: 2rem; color: var(--accent);">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </div>
                         <h5 class="text-white">Feature Influence</h5>
                         <p class="small text-dim">Analyzes specific genre/tag clusters like "Action, Indie" to weigh their historical commercial impact.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-4 border border-secondary h-100">
+                    <div class="p-4 border border-secondary h-100" style="transition: all 0.3s ease;">
+                        <div class="mb-3" style="font-size: 2rem; color: var(--accent);">
+                            <i class="bi bi-trophy"></i>
+                        </div>
                         <h5 class="text-white">Success Tiers</h5>
                         <p class="small text-dim">Classifies data into High, Moderate, and Low success based on complex pre-launch metadata interactions.</p>
                     </div>
@@ -96,7 +161,10 @@
         </div>
     </section>
 
-    <section id="predict" class="py-5">
+    <!-- Section Connector -->
+    <div class="section-connector"></div>
+
+    <section id="predict" class="py-5 grid-bg">
         <div class="container" style="max-width: 800px;">
             
             {% if prediction_text %}
@@ -108,97 +176,96 @@
                 {% set tier_class = 'low' %}
             {% endif %}
 
-            <div class="card p-4 mb-4 result-card-{{ tier_class }}" style="background: #161616;">
+            <div class="card p-4 mb-4 result-card-{{ tier_class }}" style="background: #161616; position: relative; overflow: hidden;">
+                <!-- Particle Burst Effect -->
+                <div class="particle-burst" id="particleBurst"></div>
 
-                    <!-- Row 1: The Prediction -->
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h6 class="mb-0 text-white small fw-bold">MARKET POTENTIAL:</h6>
-                        <span class="result-text text-tier-{{ tier_class }} fs-4 fw-bold">
-                            {{ prediction_text }}
-                        </span>
-                    </div>
+                <!-- Floating Orbs -->
+                <div class="glow-orb glow-orb-1" style="width: 150px; height: 150px;"></div>
+                <div class="glow-orb glow-orb-2" style="width: 100px; height: 100px;"></div>
 
-                    <!-- Row 2: The Confidence Score -->
-                    <div class="mt-3 pt-3 border-top border-secondary">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <p class="text-white small fw-bold mb-0" style="font-size: 0.7rem; letter-spacing: 1px;">PREDICTION CONFIDENCE:</p>
-                            <span class="text-white small">{{ "%.2f"|format(confidence) }}%</span>
-                        </div>
-                        <div class="progress" style="height: 8px; background-color: #333; border-radius: 10px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                style="width: {{ confidence }}%; 
-                                        background-color: {% if 'High' in prediction_text %}#00ff88{% elif 'Moderate' in prediction_text %}#00d1ff{% else %}#ff4b2b{% endif %};">
-                            </div>
-                        </div>
+                <!-- Row 1: The Prediction -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="mb-0 text-white small fw-bold">MARKET POTENTIAL:</h6>
+                    <span class="result-text text-tier-{{ tier_class }} fs-4 fw-bold" id="predictionResult">
+                        {{ prediction_text }}
+                    </span>
+                </div>
+
+                <!-- Row 2: The Confidence Score -->
+                <div class="mt-3 pt-3 border-top border-secondary">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-white small fw-bold mb-0" style="font-size: 0.7rem; letter-spacing: 1px;">PREDICTION CONFIDENCE:</p>
+                        <span class="text-white small">{{ "%.2f"|format(confidence) }}%</span>
                     </div>
-                
-                    <div class="mt-3 pt-3 border-top border-secondary">
-                        <p class="text-white small fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">SUCCESS DRIVERS:</p>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for item in top_influencers %}
-                            <div class="badge bg-dark border border-secondary px-3 py-2" style="font-size: 0.85rem;">
-                                <span style="color: var(--accent);">#</span> {{ item.name }}
-                            </div>
-                            {% endfor %}
+                    <div class="progress" style="height: 8px; background-color: #333; border-radius: 10px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                            style="width: {{ confidence }}%; 
+                                    background-color: {% if 'High' in prediction_text %}#00ff88{% elif 'Moderate' in prediction_text %}#00d1ff{% else %}#ff4b2b{% endif %};">
                         </div>
                     </div>
+                </div>
+            
+                <div class="mt-3 pt-3 border-top border-secondary">
+                    <p class="text-white small fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">SUCCESS DRIVERS:</p>
+                    <div style="position: relative; height: 180px; width: 100%;">
+                        <canvas id="driversChart"></canvas>
+                    </div>
+                </div>
 
-                    {% if recommendations %}
-                                    <div class="mt-4 pt-3 border-top border-secondary">
-                                        <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">ACTIONABLE NEXT STEPS:</p>
-                                        
-                                        <ul class="list-unstyled mb-0" style="font-size: 0.85rem; color: var(--text-dim);">
-                                            {% for rec in recommendations %}
-                                            <li class="mb-2 d-flex align-items-start">
-                                                <i class="bi bi-arrow-right-short me-2" style="color: var(--accent); font-size: 1.2rem; line-height: 1;"></i>
-                                                <span>{{ rec }}</span>
-                                            </li>
-                                            {% endfor %}
-                                        </ul>
-                                    </div>
-                                    {% endif %}
+                {% if recommendations %}
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">ACTIONABLE NEXT STEPS:</p>
+                    
+                    <ul class="list-unstyled mb-0" style="font-size: 0.85rem; color: var(--text-dim);">
+                        {% for rec in recommendations %}
+                        <li class="mb-2 d-flex align-items-start">
+                            <i class="bi bi-arrow-right-short me-2" style="color: var(--accent); font-size: 1.2rem; line-height: 1;"></i>
+                            <span>{{ rec }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
 
-                    <div class="mt-4 pt-3 border-top border-secondary">
-                        <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">COMPETITIVE BENCHMARKS:</p>
-                        
-                        <div class="row g-3">
-                            {% if similar_games %}
-                                {% for game in similar_games %}
-                                <div class="col-12">
-                                    <div class="d-flex align-items-center p-2 rounded benchmark-card" style="background: rgba(255,255,255,0.03); border: 1px solid #333;">
-                                        <!-- Use brackets for 'Header Image' and 'Name' keys -->
-                                        <img src="{{ game['Header image'] }}" alt="{{ game['Name'] }}" style="width: 120px; border-radius: 4px; margin-right: 15px;">
-                                        <div class="flex-grow-1">
-                                            <h6 class="mb-0 text-white" style="font-size: 0.9rem;">{{ game['Name'] }}</h6>
-                                            <span class="text-accent small" style="font-size: 0.75rem;">${{ game['Price'] }}</span>
-                                        </div>
+                <div class="mt-4 pt-3 border-top border-secondary">
+                    <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">COMPETITIVE BENCHMARKS:</p>
+                    
+                    <div class="row g-3">
+                        {% if similar_games %}
+                            {% for game in similar_games %}
+                            <div class="col-12">
+                                <div class="d-flex align-items-center p-2 rounded benchmark-card" style="background: rgba(255,255,255,0.03); border: 1px solid #333;">
+                                    <img src="{{ game['Header image'] }}" alt="{{ game['Name'] }}" style="width: 120px; border-radius: 4px; margin-right: 15px;">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 text-white" style="font-size: 0.9rem;">{{ game['Name'] }}</h6>
+                                        <span class="text-accent small" style="font-size: 0.75rem;">${{ game['Price'] }}</span>
                                     </div>
                                 </div>
-                                {% endfor %}
-                            {% else %}
-                                <!-- This text is now lighter (#aaa) to be visible on dark background -->
-                                <p class="small italic" style="color: #aaa;">No similar historical matches found for this specific configuration.</p>
-                            {% endif %}
-                        </div>
-                    </div>                 
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="small italic" style="color: #aaa;">No similar historical matches found for this specific configuration.</p>
+                        {% endif %}
+                    </div>
+                </div>                 
 
             </div>
             {% endif %}
 
-            <div class="card p-5 mx-auto" style="background: #1a1a1a; border: 1px solid #333;">
+            <div class="card p-5 mx-auto" style="background: #1a1a1a; border: 1px solid #333; position: relative;">
                 <h3 class="text-center mb-4 text-white">Input Metadata</h3>
                 
-                <form action="/predict#predict" method="POST">
+                <form action="/predict#predict" method="POST" id="predictForm">
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">
+                            <label class="form-label" style="white-space: nowrap;">
                                 Base Price ($)
-                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Planned launch price of your game."></i>
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Planned base price at launch (in USD)."></i>
                             </label>
-                            <input type="number" step="0.01" min="0" name="price" class="form-control" required
-                                placeholder="e.g., 19.99"
-                                value="{{ original_input['price'] if original_input else '0.00' }}">
+                            <input type="number" min="0" name="base_price" class="form-control" required
+                                value="{{ original_input['base_price'] if original_input else '0' }}">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
@@ -273,7 +340,11 @@
                             <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Click to toggle core genres."></i>
                         </label>
                         <div class="pill-container">
-                            {% set genre_list = ['Action', 'Adventure', 'Casual', 'Indie', 'Massively Multiplayer', 'RPG', 'Racing', 'Simulation', 'Sports', 'Strategy'] %}
+                            {% set genre_list = [
+                                'Action', 'Adventure', 'RPG', 'Strategy', 'Simulation', 
+                                'Sports', 'Racing', 'Casual', 'Indie', 'Massively Multiplayer', 
+                                'Free to Play', 'Early Access'
+                            ] %}
                             {% for g in genre_list %}
                             <input type="checkbox" class="btn-check" id="genre_{{ loop.index }}" name="genres" value="{{ g }}" 
                                 {% if original_input and g in original_input.get('genres', '') %}checked{% endif %}>
@@ -288,7 +359,12 @@
                             <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Click to toggle secondary game descriptors."></i>
                         </label>
                         <div class="pill-container tag-container-scroll">
-                            {% set tag_list = ['Singleplayer', 'Multiplayer', 'Atmospheric', 'Story Rich', '2D', '3D', 'Fantasy', 'Sci-fi', 'Open World', 'Early Access'] %}
+                            {% set tag_list = [
+                                'Singleplayer', 'Multiplayer', 'Co-op', 'Online Co-Op', 'Local Multiplayer', 'Local Co-Op', 'PvP', 'PvE',
+                                '2D', '3D', 'First-Person', 'Third Person', 'Pixel Graphics', 'Retro', 'Stylized', 'Anime', 'Cute',
+                                'Atmospheric', 'Story Rich', 'Great Soundtrack', 'Difficult', 'Funny', 'Psychological Horror',
+                                'Open World', 'Survival', 'Crafting', 'Sandbox', 'Rogue-like', 'Rogue-lite', 'Metroidvania', 'Souls-like'
+                            ] %}
                             {% for t in tag_list %}
                             <input type="checkbox" class="btn-check" id="tag_{{ loop.index }}" name="tags" value="{{ t }}"
                                 {% if original_input and t in original_input.get('tags', '') %}checked{% endif %}>
@@ -298,7 +374,10 @@
                     </div>
 
                     <div class="d-flex gap-2 mt-4 border-top border-secondary pt-4">
-                        <button type="submit" class="btn btn-primary flex-grow-1">Analyze Potential</button>
+                        <button type="submit" class="btn btn-primary flex-grow-1" id="analyzeBtn">
+                            <span id="btnText">Analyze Potential</span>
+                            <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
                         <a href="{{ url_for('reset') }}" class="btn btn-outline-secondary px-4">Reset</a>
                     </div>
                 </form>
@@ -306,14 +385,182 @@
         </div>
     </section>
 
+    <!-- Scroll to Top Button -->
+    <button onclick="topFunction()" id="scrollTopBtn" title="Go to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     
     <script>
-        // Wait for HTML to load, then initialize tooltips
+        // --- Scroll Progress Bar ---
+        window.onscroll = function() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById("scrollProgress").style.width = scrolled + "%";
+            
+            // Scroll to top button
+            const btn = document.getElementById("scrollTopBtn");
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        };
+
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // --- Navbar Scroll Effect ---
+        document.addEventListener('scroll', function() {
+            const nav = document.getElementById('mainNav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // --- Typewriter Effect for Hero Text ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const heroText = document.getElementById('heroText');
+            if (heroText) {
+                const originalText = heroText.textContent;
+                let i = 0;
+                heroText.textContent = '';
+                
+                function typeWriter() {
+                    if (i < originalText.length) {
+                        heroText.textContent += originalText.charAt(i);
+                        i++;
+                        setTimeout(typeWriter, 30);
+                    }
+                }
+                typeWriter();
+            }
+        });
+
+        // --- Initialize Tooltips ---
         document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-              return new bootstrap.Tooltip(tooltipTriggerEl);
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+
+        // --- Initialize Chart.js (With Relative Percentages) ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const influencers = {{ top_influencers | tojson | safe if top_influencers else '[]' }};
+            const canvasElement = document.getElementById('driversChart');
+            
+            // Only draw if we have data and the canvas exists
+            if (influencers.length > 0 && canvasElement) {
+                const ctx = canvasElement.getContext('2d');
+                
+                // 1. Calculate the total weight of ONLY the top 3 drivers
+                const totalWeight = influencers.reduce((sum, inf) => sum + inf.weight, 0);
+                
+                // 2. Extract labels and convert raw weights into a relative percentage (0-100%)
+                const labels = influencers.map(inf => '#' + inf.name);
+                const dataWeights = influencers.map(inf => Math.round((inf.weight / totalWeight) * 100));
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Relative Impact',
+                            data: dataWeights,
+                            backgroundColor: '#00ff88',
+                            borderColor: '#00ff88',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return ' Relative Impact: ' + context.parsed.x + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                max: 100,
+                                grid: { color: '#333333' },
+                                ticks: { 
+                                    color: '#a0a0a0', 
+                                    font: { size: 10 },
+                                    callback: function(value) { return value + "%" }
+                                }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: { color: '#e0e0e0', font: { weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Particle Burst Effect on Prediction ---
+            const predictionResult = document.getElementById('predictionResult');
+            if (predictionResult) {
+                const burstContainer = document.getElementById('particleBurst');
+                if (burstContainer) {
+                    const colors = ['#00ff88', '#00d4ff', '#ff4b2b', '#ff00e6', '#9b59b6'];
+                    for (let i = 0; i < 20; i++) {
+                        const particle = document.createElement('span');
+                        const angle = Math.random() * 360;
+                        const distance = 50 + Math.random() * 150;
+                        const tx = Math.cos(angle) * distance;
+                        const ty = Math.sin(angle) * distance;
+                        particle.style.setProperty('--tx', tx + 'px');
+                        particle.style.setProperty('--ty', ty + 'px');
+                        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                        particle.style.animationDelay = Math.random() * 0.5 + 's';
+                        burstContainer.appendChild(particle);
+                    }
+                }
+            }
+
+            // --- Form Submit Loading State ---
+            const form = document.getElementById('predictForm');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const btn = document.getElementById('analyzeBtn');
+                    const btnText = document.getElementById('btnText');
+                    const btnSpinner = document.getElementById('btnSpinner');
+                    btnText.textContent = 'Analyzing...';
+                    btnSpinner.classList.remove('d-none');
+                    btn.disabled = true;
+                });
+            }
+        });
+
+        // --- Smooth Scroll for Nav Links ---
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
             });
         });
     </script>

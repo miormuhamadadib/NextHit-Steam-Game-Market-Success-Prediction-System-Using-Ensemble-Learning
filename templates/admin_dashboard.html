@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | NextHit Market Intelligence</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                NEXT<span style="color: var(--accent)">HIT</span>
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+                    
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item active" href="{{ url_for('admin_dashboard') }}">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i class="bi bi-people me-2"></i>Users
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                        <i class="bi bi-graph-up me-2"></i>Model Performance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
+                                        <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                        <i class="bi bi-clock-history me-2"></i>All Predictions
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
+                                        <i class="bi bi-heart-pulse me-2"></i>System Health
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                        <i class="bi bi-download me-2"></i>Export Data
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section>
+        <div class="container" style="max-width: 1200px; padding-bottom: 50px;">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
+                <div>
+                    <h2 class="fw-bold m-0" style="color: var(--text-main);">
+                        <i class="bi bi-shield-lock me-2" style="color: var(--accent);"></i>Admin Dashboard
+                    </h2>
+                    <p style="color: var(--text-dim); margin-top: 5px;">
+                        Welcome back, <span class="text-white fw-bold">{{ session.get('username') }}</span>. 
+                        <span class="badge bg-success ms-2" style="font-size: 0.65rem;">Administrator</span>
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    <span class="text-dim" style="font-size: 0.8rem;">
+                        <i class="bi bi-clock me-1"></i>Last updated: {{ last_updated|default('now') }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Stats Cards Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <i class="bi bi-database stat-icon"></i>
+                        <div class="stat-number">{{ total_predictions|default(0) }}</div>
+                        <div class="stat-label">Total Predictions</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <i class="bi bi-people stat-icon"></i>
+                        <div class="stat-number">{{ total_users|default(0) }}</div>
+                        <div class="stat-label">Registered Users</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <i class="bi bi-graph-up-arrow stat-icon"></i>
+                        <div class="stat-number">{{ high_success_count|default(0) }}</div>
+                        <div class="stat-label">High Success Predictions</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card">
+                        <i class="bi bi-clock-history stat-icon"></i>
+                        <div class="stat-number">{{ today_predictions|default(0) }}</div>
+                        <div class="stat-label">Today's Predictions</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-pie-chart me-2" style="color: var(--accent);"></i>Prediction Distribution
+                        </h5>
+                        <div style="height: 250px;">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-activity me-2" style="color: var(--accent);"></i>Daily Activity (Last 7 Days)
+                        </h5>
+                        <div style="height: 250px;">
+                            <canvas id="activityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Genres & User Activity Row -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-5">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-tags me-2" style="color: var(--accent);"></i>Top Genres
+                        </h5>
+                        <div style="height: 200px;">
+                            <canvas id="genresChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-7">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-people me-2" style="color: var(--accent);"></i>Top Active Users
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Predictions</th>
+                                        <th>Most Common Result</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in user_activity|default([]) %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-bold">{{ user.username }}</span>
+                                            {% if user.role == 'admin' %}
+                                                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.6rem;">Admin</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ user.prediction_count }}</td>
+                                        <td>
+                                            {% if user.most_common_result %}
+                                                <span class="badge-tier 
+                                                    {% if user.most_common_result == 'High Success' %}tier-high
+                                                    {% elif user.most_common_result == 'Moderate Success' %}tier-moderate
+                                                    {% else %}tier-low{% endif %}">
+                                                    {{ user.most_common_result }}
+                                                </span>
+                                            {% else %}
+                                                <span style="color: var(--text-dim);">No predictions</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="viewUser({{ user.id }})" title="View User">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            {% if user.id != session.get('id') %}
+                                                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')" title="Delete User">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% if not user_activity %}
+                                    <tr>
+                                        <td colspan="4" class="text-center text-dim py-4">
+                                            <i class="bi bi-inbox me-2"></i>No user activity yet
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Row -->
+            <div class="row g-4">
+                <div class="col-12">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-tools me-2" style="color: var(--accent);"></i>Quick Actions
+                        </h5>
+                        <div class="d-flex flex-wrap gap-3">
+                            <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('history') }}'">
+                                <i class="bi bi-clock-history me-2"></i>View All Predictions
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('admin_users') }}'">
+                                <i class="bi bi-people me-2"></i>Manage Users
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('export_data') }}'">
+                                <i class="bi bi-download me-2"></i>Export Data
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('system_health') }}'">
+                                <i class="bi bi-heart-pulse me-2"></i>System Health
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('model_performance') }}'">
+                                <i class="bi bi-graph-up me-2"></i>Model Performance
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="clearAllHistory()">
+                                <i class="bi bi-trash me-2"></i>Clear All History
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Scroll to Top Button -->
+    <button onclick="topFunction()" id="scrollTopBtn" title="Go to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- Scroll to Top Button ---
+        window.onscroll = function() { scrollFunction() };
+        
+        function scrollFunction() {
+            const btn = document.getElementById("scrollTopBtn");
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        }
+        
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // --- Initialize Charts ---
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // 1. Distribution Chart (Pie/Doughnut)
+            const ctx1 = document.getElementById('distributionChart').getContext('2d');
+            const distributionData = {{ distribution|default([])|tojson }};
+            
+            if (distributionData.length > 0) {
+                const labels = distributionData.map(d => d.prediction_result);
+                const counts = distributionData.map(d => d.count);
+                const colors = labels.map(label => {
+                    if (label.includes('High')) return '#00ff88';
+                    if (label.includes('Moderate')) return '#00d1ff';
+                    return '#ff4b2b';
+                });
+                
+                new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: counts,
+                            backgroundColor: colors,
+                            borderColor: '#1e1e1e',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#e0e0e0',
+                                    padding: 15,
+                                    font: { size: 12 }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctx1.fillStyle = '#333';
+                ctx1.font = '16px Inter';
+                ctx1.textAlign = 'center';
+                ctx1.fillText('No data available', ctx1.canvas.width/2, ctx1.canvas.height/2);
+            }
+
+            // 2. Activity Chart (Line)
+            const ctx2 = document.getElementById('activityChart').getContext('2d');
+            const activityData = {{ daily_activity|default([])|tojson }};
+            
+            if (activityData.length > 0) {
+                const dates = activityData.map(d => d.date);
+                const counts = activityData.map(d => d.count);
+                
+                new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: dates,
+                        datasets: [{
+                            label: 'Predictions',
+                            data: counts,
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#00ff88',
+                            pointBorderColor: '#1e1e1e',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e0e0e0'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: '#333' },
+                                ticks: { color: '#a0a0a0' }
+                            },
+                            x: {
+                                grid: { color: '#333' },
+                                ticks: { color: '#a0a0a0' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctx2.fillStyle = '#333';
+                ctx2.font = '16px Inter';
+                ctx2.textAlign = 'center';
+                ctx2.fillText('No activity data available', ctx2.canvas.width/2, ctx2.canvas.height/2);
+            }
+
+            // 3. Genres Chart (Bar)
+            const ctx3 = document.getElementById('genresChart').getContext('2d');
+            const genresData = {{ top_genres|default([])|tojson }};
+            
+            if (genresData.length > 0) {
+                const labels = genresData.map(d => d.genres);
+                const counts = genresData.map(d => d.count);
+                
+                new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Predictions',
+                            data: counts,
+                            backgroundColor: 'rgba(0, 255, 136, 0.6)',
+                            borderColor: '#00ff88',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: '#333' },
+                                ticks: { 
+                                    color: '#e0e0e0',
+                                    font: { size: 10 }
+                                }
+                            },
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#333' },
+                                ticks: { color: '#a0a0a0' }
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctx3.fillStyle = '#333';
+                ctx3.font = '16px Inter';
+                ctx3.textAlign = 'center';
+                ctx3.fillText('No genre data available', ctx3.canvas.width/2, ctx3.canvas.height/2);
+            }
+        });
+
+        // --- User Actions ---
+        function viewUser(userId) {
+            // Redirect to user detail page or show modal
+            window.location.href = `/admin/user/${userId}`;
+        }
+
+        function deleteUser(userId, username) {
+            if (confirm(`Are you sure you want to delete user "${username}"? This will also delete all their predictions.`)) {
+                fetch(`/admin/user/${userId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete user: ' + data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        function clearAllHistory() {
+            if (confirm('⚠️ WARNING: This will permanently delete ALL prediction history. Are you sure?')) {
+                if (confirm('Final confirmation: This action cannot be undone!')) {
+                    fetch('/clear_history', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Failed to clear history: ' + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            }
+        }
+
+        function refreshData() {
+            // Add a loading state
+            const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
+            const originalHtml = refreshBtn.innerHTML;
+            refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Loading...';
+            refreshBtn.disabled = true;
+            
+            // Reload the page after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        }
+
+        // Auto-refresh data every 5 minutes
+        setInterval(() => {
+            location.reload();
+        }, 300000);
+
+        // Tooltip initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

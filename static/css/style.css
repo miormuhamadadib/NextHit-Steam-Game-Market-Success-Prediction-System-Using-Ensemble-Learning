@@ -3,20 +3,18 @@
     --nav-height: 80px;
     --bg-dark: #121212;
     --card-bg: #1e1e1e;
-    --accent: #00ff88; /* Minimalist gaming green */
+    --accent: #00ff88;
     --text-main: #e0e0e0;
     --text-dim: #a0a0a0;
+    --neon-blue: #00d4ff;
+    --neon-pink: #ff00e6;
+    --neon-purple: #9b59b6;
 }
 
 html {
     scroll-behavior: smooth;
-    
-    /* 1. Change 'mandatory' to 'proximity'. 
-       This keeps the smooth snapping effect but stops it from fighting you on tall sections. */
-    scroll-snap-type: y proximity; 
-    
-    /* 2. Add this! It tells the browser to stop scrolling 80px EARLY so the navbar doesn't cover your results. */
-    scroll-padding-top: var(--nav-height); 
+    scroll-snap-type: y proximity;
+    scroll-padding-top: var(--nav-height);
 }
 
 body {
@@ -25,17 +23,106 @@ body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     margin: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* --- Ambient Glow Background Animation --- */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+    animation: ambientGlow 10s ease-in-out infinite alternate;
+}
+
+@keyframes ambientGlow {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+/* --- Animated Grid Background --- */
+.grid-bg {
+    position: relative;
+}
+
+.grid-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    animation: gridScroll 20s linear infinite;
+}
+
+@keyframes gridScroll {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(40px, 40px); }
+}
+
+/* --- Scroll Progress Bar --- */
+.scroll-progress {
+    position: fixed;
+    top: var(--nav-height);
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--neon-blue));
+    z-index: 1049;
+    transition: width 0.1s ease;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    width: 0%;
+}
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--neon-blue);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
 }
 
 /* --- Fixed Navigation --- */
 .navbar {
     height: var(--nav-height);
-    position: fixed !important; /* Force it to stay at the top */
+    position: fixed !important;
     top: 0;
     width: 100%;
     z-index: 1050;
-    background: #121212 !important; /* Solid background prevents ghosting */
+    background: rgba(18, 18, 18, 0.95) !important;
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.navbar.scrolled {
+    background: rgba(18, 18, 18, 0.98) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .nav-link {
@@ -44,6 +131,24 @@ body {
     text-transform: uppercase;
     font-size: 0.85rem;
     letter-spacing: 1px;
+    position: relative;
+    transition: color 0.3s ease;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+    width: 100%;
 }
 
 .nav-link:hover, .nav-link.active {
@@ -57,10 +162,25 @@ section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* This padding-top is the main fix—it must be larger than nav-height */
-    padding-top: calc(var(--nav-height) + 60px) !important; 
+    padding-top: calc(var(--nav-height) + 60px) !important;
     box-sizing: border-box;
     scroll-snap-align: start;
+    position: relative;
+}
+
+/* --- Section Connector Lines --- */
+.section-connector {
+    width: 2px;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--accent), transparent);
+    margin: -30px auto 0;
+    opacity: 0.3;
+    animation: pulseLine 2s ease-in-out infinite;
+}
+
+@keyframes pulseLine {
+    0%, 100% { opacity: 0.2; transform: scaleY(1); }
+    50% { opacity: 0.6; transform: scaleY(1.2); }
 }
 
 .container {
@@ -71,8 +191,21 @@ section {
 
 /* --- Typography Scaling --- */
 h1.display-3 {
-    font-size: 5rem; /* Substantial hero text */
+    font-size: 5rem;
     font-weight: 800;
+    position: relative;
+}
+
+/* --- Typewriter Cursor --- */
+.typewriter-cursor::after {
+    content: '|';
+    color: var(--accent);
+    animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .lead {
@@ -86,12 +219,34 @@ h1.display-3 {
     background-color: var(--card-bg);
     border: 1px solid #333;
     border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 14px;
+    background: linear-gradient(45deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.card:hover::before {
+    opacity: 0.3;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.05);
 }
 
 #predict .card {
-    margin: 20px auto; /* Adds a small gap between header and card */
+    margin: 20px auto;
     max-width: 800px !important;
-    width: 90%; 
+    width: 90%;
     padding: 3.5rem !important;
 }
 
@@ -104,28 +259,56 @@ h1.display-3 {
     letter-spacing: 0.5px;
 }
 
-/* --- Fix for the Checkbox Label --- */
+/* --- Floating Label Effect --- */
+.form-floating-group {
+    position: relative;
+    margin-bottom: 25px;
+}
+
+.form-floating-group .form-control {
+    padding-top: 25px;
+}
+
+.form-floating-group .form-label {
+    position: absolute;
+    top: 10px;
+    left: 15px;
+    font-size: 0.65rem;
+    opacity: 0.6;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.form-floating-group .form-control:focus + .form-label,
+.form-floating-group .form-control:not(:placeholder-shown) + .form-label {
+    top: -8px;
+    font-size: 0.6rem;
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* --- Fix for Checkbox Label --- */
 #predict .form-check-label {
     color: var(--accent);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.5px;
-    padding-top: 2px; /* Keeps the text aligned with the box */
+    padding-top: 2px;
 }
 
 /* --- High Visibility Inputs --- */
 .form-control {
     background-color: #252525;
     border: 1px solid #444;
-    color: #ffffff; /* Typed text visibility */
+    color: #ffffff;
     padding: 14px;
     border-radius: 8px;
     transition: all 0.3s ease;
 }
 
 .form-control::placeholder {
-    color: #b0b0b0; /* High-contrast hint visibility */
+    color: #b0b0b0;
     opacity: 1;
 }
 
@@ -137,7 +320,7 @@ h1.display-3 {
     outline: none;
 }
 
-/* Animation to highlight the result when it appears */
+/* --- Prediction Result Animations --- */
 .prediction-result {
     animation: fadeInGlow 1s ease-out;
     border: 2px solid var(--accent) !important;
@@ -149,7 +332,6 @@ h1.display-3 {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Indicator Bar Styling */
 .prediction-container {
     padding: 20px;
     border: 1px solid #333;
@@ -158,9 +340,85 @@ h1.display-3 {
     animation: fadeInGlow 0.8s ease-out;
 }
 
+/* --- Floating Orbs for Cards --- */
+.glow-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: -1;
+}
+
+.glow-orb-1 {
+    width: 300px;
+    height: 300px;
+    background: rgba(0, 255, 136, 0.08);
+    top: -100px;
+    right: -100px;
+    animation: floatOrb 8s ease-in-out infinite;
+}
+
+.glow-orb-2 {
+    width: 200px;
+    height: 200px;
+    background: rgba(0, 212, 255, 0.06);
+    bottom: -50px;
+    left: -50px;
+    animation: floatOrb 6s ease-in-out infinite reverse;
+}
+
+@keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -20px) scale(1.2); }
+}
+
+/* --- Progress Bar --- */
+.progress {
+    position: relative;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05) !important;
+    height: 8px !important;
+    border-radius: 10px !important;
+}
+
 .progress-bar {
-    box-shadow: 0 0 15px currentColor; /* Glow matches the bar color */
-    transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smooth filling effect */
+    position: relative;
+    transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 0 15px currentColor;
+}
+
+.progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* --- Chart Container --- */
+.chart-container {
+    position: relative;
+    height: 160px;
+    width: 100%;
+    margin-top: 10px;
+    animation: fadeInGlow 1s ease-out;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 200px;
+    }
 }
 
 /* --- Buttons --- */
@@ -172,7 +430,24 @@ h1.display-3 {
     text-transform: uppercase;
     padding: 14px 35px;
     border-radius: 8px;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.2) 50%, 
+        transparent 100%);
+    transform: skewX(-25deg);
+    transition: left 0.5s;
 }
 
 .btn-primary:hover {
@@ -180,12 +455,14 @@ h1.display-3 {
     transform: translateY(-2px);
 }
 
-/* History page specific wrapper */
-.history-wrapper {
-    padding-top: calc(var(--nav-height) + 40px);
+.btn-primary:hover::before {
+    left: 100%;
 }
 
-/* Custom styling for the minimalist reset button */
+.btn-primary:active {
+    transform: scale(0.95);
+}
+
 .btn-outline-secondary {
     border: 1px solid #444;
     color: var(--text-dim);
@@ -194,55 +471,85 @@ h1.display-3 {
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 1px;
-    
-    /* ADDED: Forces the text to perfectly center vertically and horizontally */
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
 }
 
 .btn-outline-secondary:hover {
     background: #333;
     color: #fff !important;
     border-color: var(--accent);
+    transform: translateY(-2px);
 }
 
-/* --- Modern Bootstrap Switch Override --- */
+/* --- History Page --- */
+.history-wrapper {
+    padding-top: calc(var(--nav-height) + 40px);
+}
+
+/* --- Modern Bootstrap Switch --- */
 .form-check-input:checked {
     background-color: var(--accent);
     border-color: var(--accent);
 }
+
 .form-check-input:focus {
     box-shadow: 0 0 12px rgba(0, 255, 136, 0.25);
     border-color: var(--accent);
 }
 
-/* --- Chip / Ghost Button Grid (Matches Reference Image) --- */
+/* --- Pill Container --- */
 .pill-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px; /* Nice spacing between buttons */
+    gap: 10px;
     padding-top: 5px;
 }
 
-/* Optional: Make the tags box scrollable if you add too many tags */
 .tag-container-scroll {
     max-height: 180px;
     overflow-y: auto;
     padding-right: 10px;
 }
 
-/* The Ghost Buttons (Unselected) */
+.tag-container-scroll::-webkit-scrollbar { width: 6px; }
+.tag-container-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
+.tag-container-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+.tag-container-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* --- Ghost Buttons --- */
 .btn-custom-pill {
     color: var(--text-main);
-    background-color: transparent; /* Empty background like your image */
-    border: 1px solid #555; /* Thin outline */
-    border-radius: 4px; /* More rectangular, less rounded */
+    background-color: transparent;
+    border: 1px solid #555;
+    border-radius: 4px;
     font-size: 0.9rem;
     padding: 8px 18px;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     cursor: pointer;
     display: inline-block;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-custom-pill::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(0, 255, 136, 0.1);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-custom-pill:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-custom-pill:hover {
@@ -250,94 +557,159 @@ h1.display-3 {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* The Solid Buttons (Selected) */
 .btn-check:checked + .btn-custom-pill {
-    background-color: var(--accent); /* Fills with your neon green */
-    color: #000; /* Dark text for high contrast */
+    background-color: var(--accent);
+    color: #000;
     border-color: var(--accent);
     font-weight: 700;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2); /* Slight gaming glow */
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    animation: popPill 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Custom Scrollbar */
-.tag-container-scroll::-webkit-scrollbar { width: 6px; }
-.tag-container-scroll::-webkit-scrollbar-track { background: #1a1a1a; }
-.tag-container-scroll::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
-.tag-container-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+@keyframes popPill {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
 
-/* --- Flash Message Alerts (Dark Mode Fix) --- */
+/* --- Flash Messages --- */
 .alert-success {
-    color: var(--accent) !important; /* Forces the text to be your neon green */
-    background-color: rgba(0, 255, 136, 0.1) !important; /* Adds a faint green glow behind it */
-    border: 1px solid var(--accent) !important; /* Sharp neon border */
+    color: var(--accent) !important;
+    background-color: rgba(0, 255, 136, 0.1) !important;
+    border: 1px solid var(--accent) !important;
 }
 
 .alert-danger {
-    color: #ff4c4c !important; /* Bright red for errors */
+    color: #ff4c4c !important;
     background-color: rgba(255, 76, 76, 0.1) !important;
     border: 1px solid #ff4c4c !important;
 }
 
-/* --- Dashboard Specific Styles --- */
-.stat-card { 
-    background: var(--card-bg); 
-    border: 1px solid #333; 
-    border-radius: 12px; 
-    padding: 30px; 
-    text-align: center; 
-    transition: all 0.3s ease; 
-}
-.stat-card:hover { 
-    border-color: var(--accent); 
-    transform: translateY(-5px); 
-    box-shadow: 0 10px 20px rgba(0, 255, 136, 0.05);
-}
-.stat-number { 
-    font-size: 3rem; 
-    font-weight: 800; 
-    color: var(--accent); 
-    line-height: 1; 
-    margin-bottom: 10px; 
-}
-.stat-label { 
-    color: var(--text-dim); 
-    font-size: 0.85rem; 
-    text-transform: uppercase; 
-    letter-spacing: 1.5px; 
-    font-weight: 600; 
+/* --- Dashboard Stats --- */
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
 
+.stat-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 255, 136, 0.05);
+}
+
+.stat-card .stat-icon {
+    font-size: 2.5rem;
+    color: var(--accent);
+    opacity: 0.2;
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover .stat-icon {
+    transform: scale(1.2) rotate(5deg);
+    opacity: 0.4;
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), var(--neon-blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    position: relative;
+    padding-bottom: 5px;
+}
+
+.stat-label::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 30px;
+    height: 2px;
+    background: var(--accent);
+    transform: translateX(-50%);
+    transition: width 0.3s ease;
+}
+
+.stat-card:hover .stat-label::after {
+    width: 50px;
+}
+
+/* --- History Table --- */
 .history-table {
     width: 100%;
     color: var(--text-main);
     font-size: 0.95rem;
 }
+
 .history-table th {
-    color: var(--text-dim); 
-    text-transform: uppercase; 
-    font-size: 0.75rem; 
-    letter-spacing: 1px; 
-    border-bottom: 2px solid #333; 
-    padding-bottom: 20px !important; /* Gave the header more breathing room below */
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #333;
+    padding-bottom: 20px !important;
     text-align: center;
 }
+
 .history-table td {
-    /* Increased top and bottom padding to 24px for a much spacier feel */
-    padding: 24px 10px !important; 
-    border-bottom: 1px solid #2a2a2a; 
-    vertical-align: middle; 
+    padding: 24px 10px !important;
+    border-bottom: 1px solid #2a2a2a;
+    vertical-align: middle;
     text-align: center;
 }
 
-/* Badges for Success Tiers */
-.badge-tier { padding: 8px 14px; border-radius: 6px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
-.tier-high { background: rgba(0, 255, 136, 0.1); color: var(--accent); border: 1px solid var(--accent); }
-.tier-moderate { background: rgba(0, 209, 255, 0.1); color: #00d1ff; border: 1px solid #00d1ff; }
-.tier-low { background: rgba(255, 75, 43, 0.1); color: #ff4b2b; border: 1px solid #ff4b2b; }
+/* --- Badges --- */
+.badge-tier { 
+    padding: 8px 14px; 
+    border-radius: 6px; 
+    font-weight: 800; 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+}
 
-/* --- Admin History Specific Styles --- */
+.tier-high { 
+    background: rgba(0, 255, 136, 0.1); 
+    color: var(--accent); 
+    border: 1px solid var(--accent); 
+}
+
+.tier-moderate { 
+    background: rgba(0, 209, 255, 0.1); 
+    color: #00d1ff; 
+    border: 1px solid #00d1ff; 
+}
+
+.tier-low { 
+    background: rgba(255, 75, 43, 0.1); 
+    color: #ff4b2b; 
+    border: 1px solid #ff4b2b; 
+}
+
+/* --- Admin History --- */
 .history-content {
-    max-width: 1200px; /* Slightly wider for the big admin table */
+    max-width: 1200px;
 }
 
 .data-cell-text {
@@ -359,6 +731,7 @@ h1.display-3 {
     letter-spacing: 0.5px;
 }
 
+/* --- Scroll Top Button --- */
 #scrollTopBtn {
     position: fixed;
     bottom: 30px;
@@ -372,34 +745,47 @@ h1.display-3 {
     color: #121212;
     border: none;
     box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 #scrollTopBtn:hover {
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1.1);
     background: #00e67a;
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
 }
 
-/* --- Confidence Score Styling --- */
+/* --- Confidence Score --- */
 .confidence-score {
     font-size: 0.75rem;
     color: var(--text-dim);
     letter-spacing: 0.5px;
-    display: block; /* Ensures it sits neatly under the main prediction */
+    display: block;
     margin-top: 2px;
 }
 
-/* --- Dynamic Result Text Formatting --- */
+/* --- Result Text --- */
 .result-text {
     font-size: 1.6rem;
     display: block;
     font-weight: bold;
 }
-.text-tier-high { color: var(--accent); text-shadow: 0 0 12px rgba(0, 255, 136, 0.25); }
-.text-tier-moderate { color: #00d1ff; text-shadow: 0 0 12px rgba(0, 209, 255, 0.25); }
-.text-tier-low { color: #ff4b2b; text-shadow: 0 0 12px rgba(255, 75, 43, 0.25); }
 
-/* --- Confidence Pill Badge --- */
+.text-tier-high { 
+    color: var(--accent); 
+    text-shadow: 0 0 12px rgba(0, 255, 136, 0.25); 
+}
+
+.text-tier-moderate { 
+    color: #00d1ff; 
+    text-shadow: 0 0 12px rgba(0, 209, 255, 0.25); 
+}
+
+.text-tier-low { 
+    color: #ff4b2b; 
+    text-shadow: 0 0 12px rgba(255, 75, 43, 0.25); 
+}
+
+/* --- Confidence Pill --- */
 .confidence-pill {
     display: inline-flex;
     align-items: center;
@@ -413,29 +799,31 @@ h1.display-3 {
     text-transform: uppercase;
 }
 
-/* --- Dynamic Card Borders & Glow --- */
+/* --- Result Cards --- */
 .result-card-high { 
     border: 1px solid var(--accent) !important; 
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.05); 
 }
+
 .result-card-moderate { 
     border: 1px solid #00d1ff !important; 
     box-shadow: 0 0 20px rgba(0, 209, 255, 0.05); 
 }
+
 .result-card-low { 
     border: 1px solid #ff4b2b !important; 
     box-shadow: 0 0 20px rgba(255, 75, 43, 0.05); 
 }
 
-/* --- Dark Mode Bookmark Button Styles --- */
+/* --- Bookmark Button --- */
 .btn-bookmark {
-    background: rgba(255, 255, 255, 0.03); /* Subtle dark background box */
-    border: 1px solid #333; /* Matches your card borders */
-    border-radius: 8px; /* Slightly rounded corners */
-    color: var(--text-dim); /* Dim gray when unselected */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: var(--text-dim);
     font-size: 1.1rem;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     width: 38px;
     height: 38px;
     display: inline-flex;
@@ -444,7 +832,6 @@ h1.display-3 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
-/* Hover state (unpinned) */
 .btn-bookmark:hover {
     border-color: #555;
     color: #fff;
@@ -452,24 +839,22 @@ h1.display-3 {
     transform: translateY(-2px);
 }
 
-/* Active state (Pinned!) */
 .btn-bookmark.active {
-    background: rgba(0, 255, 136, 0.1); /* Faint neon green fill */
-    border-color: var(--accent); /* Solid neon border */
-    color: var(--accent); /* Neon green icon */
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2); /* Gaming glow effect */
-    transform: translateY(0) scale(1.05); /* Slight pop */
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    transform: translateY(0) scale(1.05);
 }
 
-/* Active hover state */
 .btn-bookmark.active:hover {
     background: rgba(0, 255, 136, 0.2);
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
 }
 
-/* --- Similar Games Styling --- */
+/* --- Similar Games --- */
 .benchmark-card {
-    transition: transform 0.2s ease, border-color 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .benchmark-card:hover {
@@ -484,16 +869,210 @@ h1.display-3 {
 }
 
 .text-dim {
-    color: #aaa !important; /* Lighter gray so it's readable */
+    color: #aaa !important;
     font-style: italic;
 }
 
 .benchmark-error {
-    color: var(--accent); /* Use your neon green/blue */
+    color: var(--accent);
     opacity: 0.8;
     font-size: 0.85rem;
     padding: 10px;
     border: 1px dashed #444;
     border-radius: 5px;
     background: rgba(255,255,255,0.02);
+}
+
+/* --- Ripple Effect --- */
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0, 255, 136, 0.3);
+    transform: scale(0);
+    animation: ripple 0.6s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* --- Theme Toggle Button --- */
+.theme-toggle {
+    background: transparent;
+    border: 1px solid #333;
+    color: var(--text-dim);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: rotate(45deg);
+}
+
+/* --- Particle Burst --- */
+.particle-burst {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    overflow: visible;
+}
+
+.particle-burst span {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: particleFly 1s ease-out forwards;
+}
+
+@keyframes particleFly {
+    0% { 
+        transform: translate(0, 0) scale(1);
+        opacity: 1;
+    }
+    100% { 
+        transform: translate(var(--tx), var(--ty)) scale(0);
+        opacity: 0;
+    }
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    h1.display-3 {
+        font-size: 3rem;
+    }
+    
+    .lead {
+        font-size: 1.2rem;
+    }
+    
+    #predict .card {
+        padding: 2rem !important;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .history-table {
+        font-size: 0.8rem;
+    }
+    
+    .history-table td,
+    .history-table th {
+        padding: 12px 5px !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .btn-primary {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .glow-orb-1,
+    .glow-orb-2 {
+        display: none;
+    }
+}
+
+/* --- Loading Spinner --- */
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(0, 255, 136, 0.1);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- Tooltip Customization --- */
+.tooltip-inner {
+    background-color: var(--card-bg);
+    border: 1px solid var(--accent);
+    color: var(--text-main);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.1);
+}
+
+.tooltip-arrow::before {
+    border-top-color: var(--accent) !important;
+}
+
+/* --- Utility Classes --- */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.slide-up {
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from { 
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Pulse Animation for Live Indicators --- */
+.pulse-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulseDot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+    0%, 100% { 
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% { 
+        opacity: 0.3;
+        transform: scale(0.7);
+    }
 }

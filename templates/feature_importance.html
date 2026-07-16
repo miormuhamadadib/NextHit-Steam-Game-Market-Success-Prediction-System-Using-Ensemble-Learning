@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Importance | NextHit Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                NEXT<span style="color: var(--accent)">HIT</span>
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+                    
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i class="bi bi-people me-2"></i>Users
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                        <i class="bi bi-graph-up me-2"></i>Model Performance
+                                    </a></li>
+                                    <li><a class="dropdown-item active" href="{{ url_for('feature_importance') }}">
+                                        <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                        <i class="bi bi-clock-history me-2"></i>All Predictions
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
+                                        <i class="bi bi-heart-pulse me-2"></i>System Health
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                        <i class="bi bi-download me-2"></i>Export Data
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section>
+        <div class="container" style="max-width: 1000px; padding-bottom: 50px;">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
+                <div>
+                    <h2 class="fw-bold m-0" style="color: var(--text-main);">
+                        <i class="bi bi-bar-chart me-2" style="color: var(--accent);"></i>Feature Importance
+                    </h2>
+                    <p style="color: var(--text-dim); margin-top: 5px;">
+                        <i class="bi bi-lightbulb me-1"></i>Understanding what drives market success
+                    </p>
+                </div>
+                <div>
+                    <span class="text-dim" style="font-size: 0.8rem;">
+                        <i class="bi bi-database me-1"></i>{{ features|length }} features analyzed
+                    </span>
+                </div>
+            </div>
+
+            <!-- Feature Importance Chart -->
+            <div class="card p-4 mb-4" style="background: var(--card-bg); border: 1px solid #333;">
+                <h5 class="mb-3" style="color: var(--text-main);">
+                    <i class="bi bi-graph-up-arrow me-2" style="color: var(--accent);"></i>Top 20 Feature Importances
+                </h5>
+                <div style="height: 500px;">
+                    <canvas id="featureChart"></canvas>
+                </div>
+                <p class="text-dim small mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Higher importance means the feature has more impact on the prediction outcome.
+                </p>
+            </div>
+
+<!-- Feature Details Table -->
+<div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+    <h5 class="mb-3" style="color: var(--text-main);">
+        <i class="bi bi-list-ul me-2" style="color: var(--accent);"></i>All Features
+    </h5>
+    <div class="table-responsive">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Feature Name</th>
+                    <th>Importance Score</th>
+                    <th>Impact Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for feature_name, importance in features %}
+                <tr>
+                    <td style="color: var(--text-dim);">{{ loop.index }}</td>
+                    <td class="fw-bold">{{ feature_name }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">{{ "%.3f"|format(importance) }}</span>
+                            <div class="progress flex-grow-1" style="height: 6px; background-color: #333;">
+                                <div class="progress-bar" style="width: {{ importance * 100 }}%; 
+                                    background-color: 
+                                        {% if importance > 0.05 %}#00ff88
+                                        {% elif importance > 0.02 %}#00d1ff
+                                        {% else %}#ff4b2b{% endif %};">
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if importance > 0.05 %}
+                            <span class="badge-tier tier-high">High</span>
+                        {% elif importance > 0.02 %}
+                            <span class="badge-tier tier-moderate">Medium</span>
+                        {% else %}
+                            <span class="badge-tier tier-low">Low</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                
+                {% if not features %}
+                <tr>
+                    <td colspan="4" class="text-center text-dim py-4">
+                        <i class="bi bi-exclamation-triangle me-2" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                        No feature importance data available.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+            <!-- Insights Section -->
+            <div class="card p-4 mt-4" style="background: var(--card-bg); border: 1px solid #333;">
+                <h5 class="mb-3" style="color: var(--text-main);">
+                    <i class="bi bi-lightbulb me-2" style="color: var(--accent);"></i>Key Insights
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3" style="background: rgba(0, 255, 136, 0.05); border-radius: 8px; border-left: 3px solid var(--accent);">
+                            <h6 class="text-white">Top Feature</h6>
+                            {% if features %}
+                                <p class="mb-0 text-dim" style="font-size: 0.9rem;">
+                                    <span class="fw-bold" style="color: var(--accent);">{{ features[0][0] }}</span>
+                                    is the most influential feature with an importance score of 
+                                    <span class="fw-bold">{{ "%.3f"|format(features[0][1]) }}</span>
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3" style="background: rgba(0, 212, 255, 0.05); border-radius: 8px; border-left: 3px solid #00d1ff;">
+                            <h6 class="text-white">Feature Count</h6>
+                            <p class="mb-0 text-dim" style="font-size: 0.9rem;">
+                                <span class="fw-bold" style="color: #00d1ff;">{{ features|selectattr('1', 'greaterthan', 0.05)|list|length }}</span>
+                                high-impact features
+                            </p>
+                            <p class="mb-0 text-dim" style="font-size: 0.8rem;">
+                                <span class="fw-bold">{{ features|selectattr('1', 'greaterthan', 0.02)|list|length }}</span>
+                                medium-impact features
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3" style="background: rgba(255, 75, 43, 0.05); border-radius: 8px; border-left: 3px solid #ff4b2b;">
+                            <h6 class="text-white">Optimization Focus</h6>
+                            <p class="mb-0 text-dim" style="font-size: 0.9rem;">
+                                Focus on improving 
+                                <span class="fw-bold" style="color: var(--accent);">
+                                    {% if features %}
+                                        {{ features[0][0] }}
+                                    {% endif %}
+                                </span>
+                                for maximum impact
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <button onclick="topFunction()" id="scrollTopBtn" title="Go to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+        // Scroll to top
+        window.onscroll = function() { 
+            const btn = document.getElementById("scrollTopBtn");
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        };
+        
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+        // Initialize Feature Importance Chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('featureChart').getContext('2d');
+            const featureData = {{ features|default([])|tojson }};
+            
+            if (featureData.length > 0) {
+                // Take top 20 features
+                const topFeatures = featureData.slice(0, 20);
+                const labels = topFeatures.map(f => f[0]);
+                const values = topFeatures.map(f => f[1]);
+                const colors = values.map(v => {
+                    if (v > 0.05) return '#00ff88';
+                    if (v > 0.02) return '#00d1ff';
+                    return '#ff4b2b';
+                });
+                
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Importance Score',
+                            data: values,
+                            backgroundColor: colors,
+                            borderColor: colors.map(c => c),
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Importance: ' + context.parsed.x.toFixed(3);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                grid: { color: '#333' },
+                                ticks: { 
+                                    color: '#e0e0e0',
+                                    font: { size: 11 }
+                                }
+                            },
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#333' },
+                                ticks: { 
+                                    color: '#a0a0a0',
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                ctx.fillStyle = '#333';
+                ctx.font = '16px Inter';
+                ctx.textAlign = 'center';
+                ctx.fillText('No feature importance data available', ctx.canvas.width/2, ctx.canvas.height/2);
+            }
+        });
+    </script>
+</body>
+</html>

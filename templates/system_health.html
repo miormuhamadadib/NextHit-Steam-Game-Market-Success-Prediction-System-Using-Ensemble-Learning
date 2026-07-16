@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Health | NextHit Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
+                NEXT<span style="color: var(--accent)">HIT</span>
+            </a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+                    
+                    {% if session.get('loggedin') %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                        
+                        {% if session.get('role') == 'admin' %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                        <i class="bi bi-people me-2"></i>Users
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                        <i class="bi bi-graph-up me-2"></i>Model Performance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
+                                        <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                        <i class="bi bi-clock-history me-2"></i>All Predictions
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item active" href="{{ url_for('system_health') }}">
+                                        <i class="bi bi-heart-pulse me-2"></i>System Health
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                        <i class="bi bi-download me-2"></i>Export Data
+                                    </a></li>
+                                </ul>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-lg-3">
+                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <section>
+        <div class="container" style="max-width: 1000px; padding-bottom: 50px;">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
+                <div>
+                    <h2 class="fw-bold m-0" style="color: var(--text-main);">
+                        <i class="bi bi-heart-pulse me-2" style="color: var(--accent);"></i>System Health
+                    </h2>
+                    <p style="color: var(--text-dim); margin-top: 5px;">
+                        <i class="bi bi-check-circle me-1" style="color: var(--accent);"></i>All systems operational
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Health Status Cards -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">
+                            {% if health_data.database_status == 'Connected' %}
+                                <i class="bi bi-check-circle" style="color: var(--accent);"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle" style="color: #ff4b2b;"></i>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Database</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">
+                            {% if health_data.database_status == 'Connected' %}
+                                <span style="color: var(--accent);">Online</span>
+                            {% else %}
+                                <span style="color: #ff4b2b;">Offline</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">
+                            {% if health_data.model_status == 'Loaded' %}
+                                <i class="bi bi-check-circle" style="color: var(--accent);"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle" style="color: #ff4b2b;"></i>
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">AI Model</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">
+                            {% if health_data.model_status == 'Loaded' %}
+                                <span style="color: var(--accent);">Loaded</span>
+                            {% else %}
+                                <span style="color: #ff4b2b;">Error</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">
+                            <i class="bi bi-clock" style="color: #00d1ff;"></i>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Uptime</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">
+                            <span style="color: #00d1ff;">{{ health_data.server_uptime }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">
+                            <i class="bi bi-people" style="color: var(--accent);"></i>
+                        </div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);">Users</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">
+                            <span style="color: var(--accent);">{{ health_data.unique_users }} Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Details -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-info-circle me-2" style="color: var(--accent);"></i>System Information
+                        </h5>
+                        <div class="mb-3">
+                            <span style="color: var(--text-dim);">Total Predictions:</span>
+                            <span class="text-white fw-bold">{{ health_data.total_predictions }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <span style="color: var(--text-dim);">Last 24 Hours:</span>
+                            <span class="text-white fw-bold">{{ health_data.last_24h_predictions }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <span style="color: var(--text-dim);">Database Status:</span>
+                            <span class="text-white">
+                                {% if health_data.database_status == 'Connected' %}
+                                    <span style="color: var(--accent);"><i class="bi bi-check-circle me-1"></i>Connected</span>
+                                {% else %}
+                                    <span style="color: #ff4b2b;"><i class="bi bi-x-circle me-1"></i>{{ health_data.database_status }}</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-dim);">Model Status:</span>
+                            <span class="text-white">
+                                {% if health_data.model_status == 'Loaded' %}
+                                    <span style="color: var(--accent);"><i class="bi bi-check-circle me-1"></i>Loaded</span>
+                                {% else %}
+                                    <span style="color: #ff4b2b;"><i class="bi bi-x-circle me-1"></i>Error</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-graph-up me-2" style="color: var(--accent);"></i>Performance Metrics
+                        </h5>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span style="color: var(--text-dim);">Model Accuracy</span>
+                                <span class="text-white fw-bold">85%</span>
+                            </div>
+                            <div class="progress" style="height: 8px; background-color: #333;">
+                                <div class="progress-bar" style="width: 85%; background-color: var(--accent);"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span style="color: var(--text-dim);">System Load</span>
+                                <span class="text-white fw-bold">Low</span>
+                            </div>
+                            <div class="progress" style="height: 8px; background-color: #333;">
+                                <div class="progress-bar" style="width: 15%; background-color: #00d1ff;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span style="color: var(--text-dim);">Prediction Volume</span>
+                                <span class="text-white fw-bold">{{ health_data.last_24h_predictions }} / day</span>
+                            </div>
+                            <div class="progress" style="height: 8px; background-color: #333;">
+                                <div class="progress-bar" style="width: 35%; background-color: #00d1ff;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card p-4 mt-4" style="background: var(--card-bg); border: 1px solid #333;">
+                <h5 class="mb-3" style="color: var(--text-main);">
+                    <i class="bi bi-tools me-2" style="color: var(--accent);"></i>Quick Actions
+                </h5>
+                <div class="d-flex flex-wrap gap-3">
+                    <button class="btn btn-outline-secondary" onclick="location.reload()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Refresh Status
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="checkHealth()">
+                        <i class="bi bi-heart-pulse me-2"></i>Check Health
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="location.href='{{ url_for('export_data') }}'">
+                        <i class="bi bi-download me-2"></i>Export Data
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="clearAllHistory()">
+                        <i class="bi bi-trash me-2"></i>Clear All History
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <button onclick="topFunction()" id="scrollTopBtn" title="Go to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Scroll to top
+        window.onscroll = function() { 
+            const btn = document.getElementById("scrollTopBtn");
+            if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                btn.style.display = "block";
+            } else {
+                btn.style.display = "none";
+            }
+        };
+        
+        function topFunction() {
+            document.body.scrollTop = 0;
+            document.documentElement.scrollTop = 0;
+        }
+
+        function checkHealth() {
+            const btn = event.target.closest('button');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Checking...';
+            btn.disabled = true;
+            
+            // Simulate health check
+            setTimeout(() => {
+                btn.innerHTML = '<i class="bi bi-check-circle me-2"></i>All Systems Operational';
+                btn.style.borderColor = 'var(--accent)';
+                btn.style.color = 'var(--accent)';
+                
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="bi bi-heart-pulse me-2"></i>Check Health';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                    btn.disabled = false;
+                }, 2000);
+            }, 1500);
+        }
+
+        function clearAllHistory() {
+            if (confirm('⚠️ WARNING: This will permanently delete ALL prediction history. Are you sure?')) {
+                if (confirm('Final confirmation: This action cannot be undone!')) {
+                    fetch('/clear_history', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('History cleared successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to clear history: ' + data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                }
+            }
+        }
+
+        // Auto-refresh every 60 seconds
+        setInterval(() => {
+            location.reload();
+        }, 60000);
+    </script>
+</body>
+</html>

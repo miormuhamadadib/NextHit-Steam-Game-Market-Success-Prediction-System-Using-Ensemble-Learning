@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Predictions | NextHit Admin</title>
+    <title>User Details | NextHit Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -47,7 +47,7 @@
                                     <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
                                         <i class="bi bi-bar-chart me-2"></i>Feature Importance
                                     </a></li>
-                                    <li><a class="dropdown-item active" href="{{ url_for('history') }}">
+                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
                                         <i class="bi bi-clock-history me-2"></i>All Predictions
                                     </a></li>
                                     <li><hr class="dropdown-divider"></li>
@@ -75,145 +75,138 @@
     </nav>
 
     <section>
-        <div class="container" style="max-width: 1200px; padding-bottom: 50px;">
+        <div class="container" style="max-width: 1000px; padding-bottom: 50px;">
             
             <!-- Header -->
             <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
                 <div>
                     <h2 class="fw-bold m-0" style="color: var(--text-main);">
-                        <i class="bi bi-clock-history me-2" style="color: var(--accent);"></i>All Predictions
+                        <i class="bi bi-person me-2" style="color: var(--accent);"></i>User Details
                     </h2>
                     <p style="color: var(--text-dim); margin-top: 5px;">
-                        <i class="bi bi-shield-lock me-1" style="color: var(--accent);"></i>
-                        Admin View: Showing predictions from <span class="text-white fw-bold">ALL</span> users
+                        <a href="{{ url_for('admin_users') }}" class="text-decoration-none" style="color: var(--accent);">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Users
+                        </a>
                     </p>
                 </div>
                 <div>
-                    <span class="badge bg-info text-dark" style="font-size: 0.8rem;">
-                        <i class="bi bi-people me-1"></i>{{ rows|length }} Total Predictions
-                    </span>
+                    {% if user.id != session.get('id') %}
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                            <i class="bi bi-trash me-1"></i>Delete User
+                        </button>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- Flash Messages -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <!-- Stats Row -->
+            <!-- User Info Cards -->
             <div class="row g-4 mb-4">
-                <div class="col-md-3">
-                    <div class="stat-card" style="padding: 15px;">
-                        <div class="stat-number" style="font-size: 1.5rem;">{{ rows|length }}</div>
-                        <div class="stat-label">Total Predictions</div>
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-person-badge me-2" style="color: var(--accent);"></i>Profile Information
+                        </h5>
+                        <div class="mb-2">
+                            <span style="color: var(--text-dim);">Username:</span>
+                            <span class="text-white fw-bold">{{ user.username }}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span style="color: var(--text-dim);">Role:</span>
+                            {% if user.role == 'admin' %}
+                                <span class="badge-tier tier-high" style="font-size: 0.7rem;">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin
+                                </span>
+                            {% else %}
+                                <span class="badge-tier tier-moderate" style="font-size: 0.7rem;">
+                                    <i class="bi bi-person me-1"></i>User
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <span style="color: var(--text-dim);">Joined:</span>
+                            <span class="text-white">{{ user.created_at.strftime('%B %d, %Y at %H:%M') if user.created_at else 'N/A' }}</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-dim);">User ID:</span>
+                            <span class="text-white">#{{ user.id }}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="padding: 15px;">
-                        <div class="stat-number" style="font-size: 1.5rem; color: var(--accent);">
-                            {{ rows|selectattr('prediction_result', 'equalto', 'High Success')|list|length }}
+                <div class="col-md-6">
+                    <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                        <h5 class="mb-3" style="color: var(--text-main);">
+                            <i class="bi bi-graph-up me-2" style="color: var(--accent);"></i>Activity Summary
+                        </h5>
+                        <div class="mb-2">
+                            <span style="color: var(--text-dim);">Total Predictions:</span>
+                            <span class="text-white fw-bold">{{ predictions|length }}</span>
                         </div>
-                        <div class="stat-label">High Success</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="padding: 15px;">
-                        <div class="stat-number" style="font-size: 1.5rem; color: #00d1ff;">
-                            {{ rows|selectattr('prediction_result', 'equalto', 'Moderate Success')|list|length }}
+                        <div class="mb-2">
+                            <span style="color: var(--text-dim);">High Success Rate:</span>
+                            {% set high_count = predictions|selectattr('prediction_result', 'equalto', 'High Success')|list|length %}
+                            <span class="text-white fw-bold">
+                                {{ "%.1f"|format((high_count / predictions|length * 100) if predictions|length > 0 else 0) }}%
+                            </span>
                         </div>
-                        <div class="stat-label">Moderate Success</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-card" style="padding: 15px;">
-                        <div class="stat-number" style="font-size: 1.5rem; color: #ff4b2b;">
-                            {{ rows|selectattr('prediction_result', 'equalto', 'Low Success')|list|length }}
+                        <div>
+                            <span style="color: var(--text-dim);">Last Active:</span>
+                            {% if predictions %}
+                                <span class="text-white">{{ predictions[0].created_at.strftime('%B %d, %Y at %H:%M') if predictions[0].created_at else 'N/A' }}</span>
+                            {% else %}
+                                <span class="text-white">Never</span>
+                            {% endif %}
                         </div>
-                        <div class="stat-label">Low Success</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Predictions Table -->
+            <!-- User Predictions -->
             <div class="card p-4" style="background: var(--card-bg); border: 1px solid #333;">
+                <h5 class="mb-3" style="color: var(--text-main);">
+                    <i class="bi bi-clock-history me-2" style="color: var(--accent);"></i>Prediction History
+                    <span class="badge bg-secondary ms-2">{{ predictions|length }}</span>
+                </h5>
+                
+                {% if predictions %}
                 <div class="table-responsive">
                     <table class="history-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>User</th>
                                 <th>Date</th>
                                 <th>Price</th>
                                 <th>Genres</th>
                                 <th>Result</th>
-                                <th>Drivers</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for row in rows %}
+                            {% for pred in predictions %}
                             <tr>
-                                <td style="color: var(--text-dim); font-size: 0.85rem;">#{{ row.id }}</td>
-                                <td>
-                                    <span class="fw-bold">{{ row.username|default('Unknown') }}</span>
-                                    {% if row.user_id == session.get('id') %}
-                                        <span class="badge bg-info text-dark ms-1" style="font-size: 0.6rem;">You</span>
-                                    {% endif %}
-                                </td>
                                 <td style="color: var(--text-dim); font-size: 0.85rem;">
-                                    {{ row.created_at.strftime('%b %d, %Y %H:%M') if row.created_at else 'N/A' }}
+                                    {{ pred.created_at.strftime('%b %d, %Y %H:%M') if pred.created_at else 'N/A' }}
                                 </td>
-                                <td class="fw-bold" style="color: var(--accent);">${{ row.price }}</td>
-                                <td style="font-size: 0.8rem; color: #aaa; max-width: 150px; word-wrap: break-word;">
-                                    {{ row.genres | truncate(30) if row.genres else 'None' }}
+                                <td class="fw-bold" style="color: var(--accent);">${{ pred.price }}</td>
+                                <td style="font-size: 0.8rem; color: #aaa;">
+                                    {{ pred.genres | truncate(30) if pred.genres else 'None' }}
                                 </td>
                                 <td>
-                                    {% if 'High' in row.prediction_result %}
+                                    {% if 'High' in pred.prediction_result %}
                                         <span class="badge-tier tier-high">High</span>
-                                    {% elif 'Moderate' in row.prediction_result %}
+                                    {% elif 'Moderate' in pred.prediction_result %}
                                         <span class="badge-tier tier-moderate">Moderate</span>
                                     {% else %}
                                         <span class="badge-tier tier-low">Low</span>
                                     {% endif %}
                                 </td>
-                                <td style="font-size: 0.75rem; color: var(--text-dim);">
-                                    {{ row.top_drivers|truncate(30) if row.top_drivers else 'N/A' }}
-                                </td>
                             </tr>
                             {% endfor %}
-                            
-                            {% if not rows %}
-                            <tr>
-                                <td colspan="7" class="text-center text-dim py-4">
-                                    <i class="bi bi-inbox me-2" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                                    No predictions found in the system.
-                                </td>
-                            </tr>
-                            {% endif %}
                         </tbody>
                     </table>
                 </div>
-            </div>
-
-            <!-- Admin Actions -->
-            <div class="card p-4 mt-4" style="background: var(--card-bg); border: 1px solid #333;">
-                <h5 class="mb-3" style="color: var(--text-main);">
-                    <i class="bi bi-tools me-2" style="color: var(--accent);"></i>Admin Actions
-                </h5>
-                <div class="d-flex flex-wrap gap-3">
-                    <a href="{{ url_for('export_data') }}" class="btn btn-outline-secondary">
-                        <i class="bi bi-download me-2"></i>Export All Data
-                    </a>
-                    <button class="btn btn-outline-danger" onclick="clearAllHistory()">
-                        <i class="bi bi-trash me-2"></i>Clear All Predictions
-                    </button>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-inbox mb-2 d-block" style="font-size: 2rem; color: #333;"></i>
+                    <p style="color: var(--text-dim);">This user hasn't made any predictions yet.</p>
                 </div>
+                {% endif %}
             </div>
 
         </div>
@@ -225,7 +218,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Scroll to top
         window.onscroll = function() { 
             const btn = document.getElementById("scrollTopBtn");
             if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
@@ -240,10 +232,10 @@
             document.documentElement.scrollTop = 0;
         }
 
-        function clearAllHistory() {
-            if (confirm('⚠️ WARNING: This will permanently delete ALL prediction history from ALL users. Are you sure?')) {
-                if (confirm('Final confirmation: This action cannot be undone!')) {
-                    fetch('/clear_history', {
+        function deleteUser(userId, username) {
+            if (confirm(`⚠️ Are you sure you want to delete user "${username}"?\nThis will also delete ALL their predictions. This action cannot be undone!`)) {
+                if (confirm('Final confirmation: Delete this user?')) {
+                    fetch(`/admin/user/${userId}/delete`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -252,9 +244,9 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            location.reload();
+                            window.location.href = "{{ url_for('admin_users') }}";
                         } else {
-                            alert('Failed to clear history: ' + data.message);
+                            alert('Failed to delete user: ' + data.message);
                         }
                     })
                     .catch(error => console.error('Error:', error));
