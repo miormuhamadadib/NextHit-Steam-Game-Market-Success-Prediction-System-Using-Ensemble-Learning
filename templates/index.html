@@ -7,7 +7,6 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
-    
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
 </head>
 <body data-bs-spy="scroll" data-bs-target=".navbar">
@@ -15,107 +14,223 @@
     <!-- Scroll Progress Bar -->
     <div class="scroll-progress" id="scrollProgress"></div>
 
-    <nav class="navbar navbar-expand-lg sticky-top" id="mainNav">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
-                <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
-                NEXT<span style="color: var(--accent)">HIT</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-                <ul class="navbar-nav align-items-center">
-                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+<nav class="navbar navbar-expand-lg sticky-top" id="mainNav">
+    <div class="container-fluid px-4">
+        <!-- Brand / Logo - Left Side -->
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
+            <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="50" height="50" class="me-2 rounded">
+            NEXT<span style="color: var(--accent)">HIT</span>
+        </a>
+        
+        <!-- Toggler for Mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Nav Items - Right Side with More Spacing -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#results-preview">What You Get</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
 
-                    {% if session.get('loggedin') %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                        
-                        {% if session.get('role') == 'admin' %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
-                                   data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-shield-lock me-1"></i>Admin
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
-                                    <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
-                                        <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
-                                        <i class="bi bi-people me-2"></i>Users
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
-                                        <i class="bi bi-graph-up me-2"></i>Model Performance
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
-                                        <i class="bi bi-bar-chart me-2"></i>Feature Importance
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('history') }}">
-                                        <i class="bi bi-clock-history me-2"></i>All Predictions
-                                    </a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
-                                        <i class="bi bi-heart-pulse me-2"></i>System Health
-                                    </a></li>
-                                    <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
-                                        <i class="bi bi-download me-2"></i>Export Data
-                                    </a></li>
-                                </ul>
-                            </li>
-                        {% endif %}
-                        
-                        <li class="nav-item ms-lg-3">
-                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
+                {% if session.get('loggedin') %}
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    
+                    {% if session.get('role') == 'admin' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-shield-lock me-1"></i>Admin
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                    <i class="bi bi-people me-2"></i>Users
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                    <i class="bi bi-graph-up me-2"></i>Model Performance
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
+                                    <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                    <i class="bi bi-clock-history me-2"></i>All Predictions
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
+                                    <i class="bi bi-heart-pulse me-2"></i>System Health
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                    <i class="bi bi-download me-2"></i>Export Data
+                                </a></li>
+                            </ul>
                         </li>
-                    {% else %}
-                        <li class="nav-item ms-lg-3">
-                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
-                        </li>
-                    {% endif %} 
-
-                </ul>
-            </div>
+                    {% endif %}
+                    
+                    <li class="nav-item ms-2">
+                        <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 8px 20px;">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-2">
+                        <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 8px 24px;">Login</a>
+                    </li>
+                {% endif %} 
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <!-- Section Connector -->
     <div class="section-connector"></div>
 
+    <!-- ============================================================ -->
+    <!-- SECTION 1: HOME / INTRODUCTION                                -->
+    <!-- ============================================================ -->
     <section id="home" class="text-center grid-bg">
         <div class="container">
             <!-- Floating Orbs -->
             <div class="glow-orb glow-orb-1"></div>
             <div class="glow-orb glow-orb-2"></div>
             
-            <h1 class="display-3 fw-bold mb-4" id="heroText">Master the <span style="color: var(--accent)">Market.</span></h1>
-            <p class="lead text-dim mx-auto" style="max-width: 700px;">Level the playing field. Actionable market forecasting for indie Steam developers, powered by ensemble learning.</p>
-            <a href="#predict" class="btn btn-primary mt-4">Launch Predictor <i class="bi bi-arrow-right ms-2"></i></a>
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <!-- Badge -->
+                    <span class="badge-tier tier-high mb-4" style="font-size: 0.75rem; letter-spacing: 2px; padding: 8px 24px; display: inline-block;">
+                        <i class="bi bi-gem me-2"></i>FINAL YEAR PROJECT 2026
+                    </span>
+                    
+                    <!-- Full Project Title -->
+                    <h1 class="display-4 fw-bold mb-3" id="heroText">
+                        NEXTHIT: <span style="color: var(--accent)">Steam Game</span><br>
+                        Market Success Prediction
+                    </h1>
+                    
+                    <p class="lead text-dim mx-auto" style="max-width: 750px; font-size: 1.1rem;">
+                        Empowering indie developers with <strong style="color: white;">data-driven insights</strong> 
+                        to forecast commercial viability using <strong style="color: var(--accent);">ensemble machine learning</strong> 
+                        — before development capital is committed.
+                    </p>
+
+                    <!-- Key Stats Cards -->
+                    <div class="row g-3 mt-4 justify-content-center">
+                        <div class="col-md-3 col-6">
+                            <div class="p-3 border border-secondary rounded" style="background: rgba(0,255,136,0.04); transition: all 0.3s ease;">
+                                <span style="color: #ff4b2b; font-weight: bold; font-size: 1.1rem;">71%</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.7rem;">Low-Success Titles</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="p-3 border border-secondary rounded" style="background: rgba(0,255,136,0.04); transition: all 0.3s ease;">
+                                <span style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">0.8122</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.7rem;">F1-High Success</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="p-3 border border-secondary rounded" style="background: rgba(0,255,136,0.04); transition: all 0.3s ease;">
+                                <span style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">5</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.7rem;">Ensemble Models</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="p-3 border border-secondary rounded" style="background: rgba(0,255,136,0.04); transition: all 0.3s ease;">
+                                <span style="color: var(--accent); font-weight: bold; font-size: 1.1rem;">20</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.7rem;">Experimental Conditions</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Call to Action -->
+                    <div class="mt-5">
+                        <a href="#predict" class="btn btn-primary me-3">
+                            <i class="bi bi-rocket-takeoff me-2"></i>Launch Predictor
+                        </a>
+                        <a href="#about" class="btn btn-outline-secondary">
+                            Learn More <i class="bi bi-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- Section Connector -->
     <div class="section-connector"></div>
 
+    <!-- ============================================================ -->
+    <!-- SECTION 2: ABOUT                                              -->
+    <!-- ============================================================ -->
     <section id="about" class="grid-bg">
         <div class="container">
-            <div class="row align-items-center">
+            <div class="row align-items-center g-4">
                 <div class="col-md-6">
-                    <h2 class="mb-4">Predicting Success in a <br>Crowded Industry.</h2>
-                    <p class="text-dim">With thousands of games launching monthly, developers need more than luck. This tool provides an objective analysis of market trends based on historical Steam performance.</p>
+                    <span class="badge-tier tier-high mb-3" style="font-size: 0.7rem; letter-spacing: 1px; padding: 4px 16px; display: inline-block;">
+                        <i class="bi bi-info-circle me-1"></i> ABOUT THE PROJECT
+                    </span>
+                    <h2 class="mb-4">Predicting Success <br>Before Launch.</h2>
+                    
+                    <p class="text-dim">
+                        With <strong style="color: white;">thousands of games launching annually</strong> on Steam 
+                        and <strong style="color: var(--accent);">71% of titles falling into low-success</strong> categories, 
+                        indie developers need more than intuition.
+                    </p>
+                    
+                    <p class="text-dim">
+                        NextHit analyzes <strong style="color: white;">pre-launch metadata</strong> — price, genres, tags, 
+                        and release timing — using a <strong style="color: var(--accent);">weighted XGBoost ensemble model</strong> 
+                        optimized with SMOTETomek to handle severe class imbalance.
+                    </p>
+                    
+                    <!-- Key Metrics Badges -->
                     <div class="mt-4">
-                        <span class="badge-tier tier-high me-2">High Accuracy</span>
-                        <span class="badge-tier tier-moderate me-2">Real-time Analysis</span>
-                        <span class="badge-tier tier-low">Actionable Insights</span>
+                        <span class="badge-tier tier-high me-2 mb-1" style="padding: 6px 16px; display: inline-block;">🏆 0.8122 F1-High</span>
+                        <span class="badge-tier tier-moderate me-2 mb-1" style="padding: 6px 16px; display: inline-block;">📊 85.67% Accuracy</span>
+                        <span class="badge-tier tier-low mb-1" style="padding: 6px 16px; display: inline-block;">🎯 0.9678 AUC-ROC</span>
+                    </div>
+                    
+                    <!-- Target Audience -->
+                    <div class="mt-4 pt-3 border-top border-secondary">
+                        <p class="small text-white fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">TARGET AUDIENCE:</p>
+                        <span class="badge bg-secondary me-1" style="background: #333 !important;">Indie Developers</span>
+                        <span class="badge bg-secondary me-1" style="background: #333 !important;">Small Publishers</span>
+                        <span class="badge bg-secondary" style="background: #333 !important;">Boutique Studios</span>
                     </div>
                 </div>
+                
                 <div class="col-md-6 text-center">
                     <div class="p-5 border border-secondary rounded text-accent" style="color: var(--accent); font-size: 3rem; font-weight: bold; position: relative; overflow: hidden;">
-                        0.85 ACCURACY
-                        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: var(--text-dim); font-weight: normal;">
-                            <i class="bi bi-graph-up-arrow me-1"></i>Ensemble Learning
+                        <span id="counterDisplay">0.8122</span>
+                        <div style="font-size: 1rem; color: var(--text-dim);">
+                            F1-HIGH SUCCESS SCORE
+                        </div>
+                        <div style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 0.7rem; color: var(--text-dim); font-weight: normal; width: 90%;">
+                            <i class="bi bi-trophy me-1"></i>Champion: XGBoost + SMOTETomek
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Stats -->
+                    <div class="row g-2 mt-3">
+                        <div class="col-4">
+                            <div class="p-2 border border-secondary rounded" style="background: rgba(0,255,136,0.03);">
+                                <span style="color: var(--accent); font-size: 1.1rem; font-weight: bold;">5</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.6rem;">Models</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border border-secondary rounded" style="background: rgba(0,255,136,0.03);">
+                                <span style="color: var(--accent); font-size: 1.1rem; font-weight: bold;">4</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.6rem;">Enhancements</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border border-secondary rounded" style="background: rgba(0,255,136,0.03);">
+                                <span style="color: var(--accent); font-size: 1.1rem; font-weight: bold;">471</span>
+                                <p class="small text-dim mb-0" style="font-size: 0.6rem;">Features → 50</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -126,17 +241,20 @@
     <!-- Section Connector -->
     <div class="section-connector"></div>
 
+    <!-- ============================================================ -->
+    <!-- SECTION 3: HOW IT WORKS                                       -->
+    <!-- ============================================================ -->
     <section id="logic" style="background-color: #161616;" class="grid-bg">
         <div class="container">
-            <h2 class="text-center mb-5">Technical Core</h2>
+            <h2 class="text-center mb-5">How It Works</h2>
             <div class="row g-4">
                 <div class="col-md-4">
                     <div class="p-4 border border-secondary h-100" style="transition: all 0.3s ease;">
                         <div class="mb-3" style="font-size: 2rem; color: var(--accent);">
                             <i class="bi bi-cpu"></i>
                         </div>
-                        <h5 class="text-white">Weighted XGBoost</h5>
-                        <p class="small text-dim">Utilizes a boosting-based ensemble method, balanced with SMOTE, to prioritize high-success indicators while maintaining an 0.85 mean accuracy.</p>
+                        <h5 class="text-white">Ensemble Learning</h5>
+                        <p class="small text-dim">Utilizes a boosting-based ensemble method — <strong style="color: white;">XGBoost</strong> — balanced with <strong style="color: var(--accent);">SMOTETomek</strong> to handle 71% class imbalance and prioritize high-success indicators.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -144,8 +262,8 @@
                         <div class="mb-3" style="font-size: 2rem; color: var(--accent);">
                             <i class="bi bi-bar-chart-fill"></i>
                         </div>
-                        <h5 class="text-white">Feature Influence</h5>
-                        <p class="small text-dim">Analyzes specific genre/tag clusters like "Action, Indie" to weigh their historical commercial impact.</p>
+                        <h5 class="text-white">Pre-Launch Features</h5>
+                        <p class="small text-dim">Analyzes <strong style="color: white;">471 features</strong> including genre/tag clusters, pricing, and release timing — reduced to <strong style="color: var(--accent);">50 key predictors</strong> via Recursive Feature Elimination.</p>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -154,7 +272,33 @@
                             <i class="bi bi-trophy"></i>
                         </div>
                         <h5 class="text-white">Success Tiers</h5>
-                        <p class="small text-dim">Classifies data into High, Moderate, and Low success based on complex pre-launch metadata interactions.</p>
+                        <p class="small text-dim">Classifies games into <strong style="color: #00ff88;">High</strong>, <strong style="color: #00d1ff;">Moderate</strong>, or <strong style="color: #ff4b2b;">Low</strong> success tiers with <strong style="color: white;">85.67% accuracy</strong> and actionable recommendations.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Experimental Design Summary -->
+            <div class="mt-5 p-4 border border-secondary rounded" style="background: rgba(0,255,136,0.03);">
+                <div class="row text-center">
+                    <div class="col-md-3 col-6">
+                        <p class="small text-dim mb-0">Factor A</p>
+                        <p class="text-white fw-bold mb-0" style="font-size: 0.9rem;">4 Enhancements</p>
+                        <p class="small text-dim" style="font-size: 0.65rem;">Baseline · SMOTE · ADASYN · SMOTETomek</p>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <p class="small text-dim mb-0">Factor B</p>
+                        <p class="text-white fw-bold mb-0" style="font-size: 0.9rem;">5 Models</p>
+                        <p class="small text-dim" style="font-size: 0.65rem;">AdaBoost · Gradient · RF · LightGBM · XGBoost</p>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <p class="small text-dim mb-0">Design</p>
+                        <p class="text-white fw-bold mb-0" style="font-size: 0.9rem;">4×5 Factorial</p>
+                        <p class="small text-dim" style="font-size: 0.65rem;">20 Experimental Conditions</p>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <p class="small text-dim mb-0">Champion</p>
+                        <p class="text-white fw-bold mb-0" style="font-size: 0.9rem; color: var(--accent);">XGBoost + SMOTETomek</p>
+                        <p class="small text-dim" style="font-size: 0.65rem;">F1-High: 0.8122</p>
                     </div>
                 </div>
             </div>
@@ -164,6 +308,121 @@
     <!-- Section Connector -->
     <div class="section-connector"></div>
 
+    <!-- ============================================================ -->
+    <!-- SECTION 4: WHAT YOU GET                                       -->
+    <!-- ============================================================ -->
+    <section id="results-preview" style="background-color: #161616;" class="grid-bg">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="badge-tier tier-high mb-3" style="font-size: 0.7rem; letter-spacing: 1px; padding: 4px 16px; display: inline-block;">
+                    <i class="bi bi-eye me-1"></i> SEE WHAT YOU GET
+                </span>
+                <h2 class="text-white">Understand Your <span style="color: var(--accent);">Market Potential</span></h2>
+                <p class="text-dim mx-auto" style="max-width: 600px; font-size: 0.95rem;">
+                    Every prediction delivers a complete market analysis to guide your game strategy.
+                </p>
+            </div>
+
+            <div class="row g-4">
+                <!-- Card 1: Success Tier -->
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100 text-center" style="transition: all 0.3s ease; background: rgba(255,255,255,0.02);">
+                        <div style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;">
+                            <i class="bi bi-trophy"></i>
+                        </div>
+                        <h5 class="text-white">Success Tier Classification</h5>
+                        <p class="small text-dim">
+                            Clear <strong style="color: #00ff88;">High</strong>, 
+                            <strong style="color: #00d1ff;">Moderate</strong>, or 
+                            <strong style="color: #ff4b2b;">Low</strong> success prediction 
+                            with a confidence percentage.
+                        </p>
+                        <div class="mt-3">
+                            <span class="badge-tier tier-high me-1" style="font-size: 0.6rem;">High</span>
+                            <span class="badge-tier tier-moderate me-1" style="font-size: 0.6rem;">Moderate</span>
+                            <span class="badge-tier tier-low" style="font-size: 0.6rem;">Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Success Drivers -->
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100 text-center" style="transition: all 0.3s ease; background: rgba(255,255,255,0.02);">
+                        <div style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </div>
+                        <h5 class="text-white">Success Drivers</h5>
+                        <p class="small text-dim">
+                            See which <strong style="color: white;">features</strong> most influence your prediction 
+                            with a visual <strong style="color: var(--accent);">importance chart</strong>.
+                        </p>
+                        <div class="mt-3">
+                            <span class="badge bg-secondary me-1" style="font-size: 0.55rem;">tags_weight</span>
+                            <span class="badge bg-secondary me-1" style="font-size: 0.55rem;">Action</span>
+                            <span class="badge bg-secondary" style="font-size: 0.55rem;">Indie</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3: Actionable Insights -->
+                <div class="col-md-4">
+                    <div class="p-4 border border-secondary h-100 text-center" style="transition: all 0.3s ease; background: rgba(255,255,255,0.02);">
+                        <div style="font-size: 2.5rem; color: var(--accent); margin-bottom: 15px;">
+                            <i class="bi bi-lightbulb-fill"></i>
+                        </div>
+                        <h5 class="text-white">Actionable Recommendations</h5>
+                        <p class="small text-dim">
+                            Get <strong style="color: white;">practical advice</strong> on pricing, 
+                            localization, marketing, and <strong style="color: var(--accent);">next steps</strong> 
+                            to improve your game's potential.
+                        </p>
+                        <div class="mt-3">
+                            <span class="badge bg-secondary me-1" style="font-size: 0.55rem;">💡 Localization</span>
+                            <span class="badge bg-secondary me-1" style="font-size: 0.55rem;">📊 Pricing</span>
+                            <span class="badge bg-secondary" style="font-size: 0.55rem;">🚀 Marketing</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview Card Mockup -->
+            <div class="mt-5 p-4 border border-secondary rounded" style="background: rgba(0,255,136,0.03);">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <div class="d-flex align-items-center gap-3 mb-3 mb-md-0">
+                            <span class="badge-tier tier-high" style="font-size: 1rem; padding: 8px 20px;">
+                                HIGH SUCCESS
+                            </span>
+                            <span style="color: var(--accent); font-weight: 600;">87% Confidence</span><br><br><br>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-secondary" style="font-size: 0.7rem;">🔹 Price: $19.99</span>
+                            <span class="badge bg-secondary" style="font-size: 0.7rem;">🔹 Action, Indie</span>
+                            <span class="badge bg-secondary" style="font-size: 0.7rem;">🔹 Singleplayer</span>
+                        </div>
+                    </div>
+                    <div class="col-md-5 text-md-end">
+                        <span style="color: var(--text-dim); font-size: 0.8rem;">
+                            <i class="bi bi-check-circle-fill" style="color: var(--accent);"></i> 
+                            Complete market analysis in seconds
+                        </span>
+                        <br>
+                        <span style="color: var(--text-dim); font-size: 0.8rem;">
+                            <i class="bi bi-graph-up-arrow" style="color: var(--accent);"></i> 
+                            Data-driven decision making
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section Connector -->
+    <div class="section-connector"></div>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 4: PREDICT                                            -->
+    <!-- ============================================================ -->
     <section id="predict" class="py-5 grid-bg">
         <div class="container" style="max-width: 800px;">
             
@@ -177,14 +436,10 @@
             {% endif %}
 
             <div class="card p-4 mb-4 result-card-{{ tier_class }}" style="background: #161616; position: relative; overflow: hidden;">
-                <!-- Particle Burst Effect -->
                 <div class="particle-burst" id="particleBurst"></div>
-
-                <!-- Floating Orbs -->
                 <div class="glow-orb glow-orb-1" style="width: 150px; height: 150px;"></div>
                 <div class="glow-orb glow-orb-2" style="width: 100px; height: 100px;"></div>
 
-                <!-- Row 1: The Prediction -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h6 class="mb-0 text-white small fw-bold">MARKET POTENTIAL:</h6>
                     <span class="result-text text-tier-{{ tier_class }} fs-4 fw-bold" id="predictionResult">
@@ -192,7 +447,6 @@
                     </span>
                 </div>
 
-                <!-- Row 2: The Confidence Score -->
                 <div class="mt-3 pt-3 border-top border-secondary">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="text-white small fw-bold mb-0" style="font-size: 0.7rem; letter-spacing: 1px;">PREDICTION CONFIDENCE:</p>
@@ -202,6 +456,27 @@
                         <div class="progress-bar progress-bar-striped progress-bar-animated" 
                             style="width: {{ confidence }}%; 
                                     background-color: {% if 'High' in prediction_text %}#00ff88{% elif 'Moderate' in prediction_text %}#00d1ff{% else %}#ff4b2b{% endif %};">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Information Display -->
+                <div class="mt-3 pt-3 border-top border-secondary">
+                    <p class="text-white small fw-bold mb-2" style="font-size: 0.7rem; letter-spacing: 1px;">💲 PRICE INFORMATION:</p>
+                    <div class="row">
+                        <div class="col-6">
+                            <span class="text-dim">Your Price:</span>
+                            <span class="text-white">
+                                {% if original_input and original_input.get('currency') %}
+                                    {{ original_input.get('currency') }} {{ "%.2f"|format(original_input.get('price_local', 0)) }}
+                                {% else %}
+                                    USD ${{ "%.2f"|format(original_input.get('base_price', 0)) if original_input else '0.00' }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-dim">Model Price (USD):</span>
+                            <span class="text-accent fw-bold">${{ "%.2f"|format(original_input.get('base_price', 0)) if original_input else '0.00' }}</span>
                         </div>
                     </div>
                 </div>
@@ -228,6 +503,9 @@
                 </div>
                 {% endif %}
 
+                <!-- ============================================================ -->
+                <!-- COMPETITIVE BENCHMARKS - FIXED                               -->
+                <!-- ============================================================ -->
                 <div class="mt-4 pt-3 border-top border-secondary">
                     <p class="text-white small fw-bold mb-3" style="font-size: 0.7rem; letter-spacing: 1px;">COMPETITIVE BENCHMARKS:</p>
                     
@@ -236,10 +514,29 @@
                             {% for game in similar_games %}
                             <div class="col-12">
                                 <div class="d-flex align-items-center p-2 rounded benchmark-card" style="background: rgba(255,255,255,0.03); border: 1px solid #333;">
-                                    <img src="{{ game['Header image'] }}" alt="{{ game['Name'] }}" style="width: 120px; border-radius: 4px; margin-right: 15px;">
+                                    <!-- ✅ Handle missing header image -->
+                                    {% if game['Header image'] and game['Header image']|length > 0 and game['Header image'] != 'nan' %}
+                                        <img src="{{ game['Header image'] }}" alt="{{ game['Name'] }}" style="width: 100px; border-radius: 4px; margin-right: 15px;" onerror="this.style.display='none'">
+                                    {% else %}
+                                        <div style="width: 100px; height: 50px; background: #2a2a2a; border-radius: 4px; margin-right: 15px; display: flex; align-items: center; justify-content: center; color: #666; font-size: 0.6rem; text-align: center; padding: 4px;">
+                                            No Image
+                                        </div>
+                                    {% endif %}
                                     <div class="flex-grow-1">
-                                        <h6 class="mb-0 text-white" style="font-size: 0.9rem;">{{ game['Name'] }}</h6>
-                                        <span class="text-accent small" style="font-size: 0.75rem;">${{ game['Price'] }}</span>
+                                        <h6 class="mb-0 text-white" style="font-size: 0.85rem;">{{ game['Name'] }}</h6>
+                                        <span class="text-accent small" style="font-size: 0.75rem;">
+                                            {% if game['Price'] %}
+                                                ${{ "%.2f"|format(game['Price']) }}
+                                            {% else %}
+                                                Price N/A
+                                            {% endif %}
+                                        </span>
+                                        <!-- ✅ Show match score -->
+                                        {% if game.get('match_score', 0) > 0 %}
+                                            <span class="badge-tier tier-high ms-2" style="font-size: 0.5rem; padding: 2px 8px;">
+                                                {{ game['match_score'] }} matches
+                                            </span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -259,14 +556,43 @@
                 <form action="/predict#predict" method="POST" id="predictForm">
                     
                     <div class="row">
+                        <!-- Currency Selector -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                Currency
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Select your local currency. All prices will be converted to USD for prediction."></i>
+                            </label>
+                            <select name="currency" class="form-control" id="currencySelect">
+                                <option value="USD" {% if original_input and original_input.get('currency') == 'USD' %}selected{% endif %}>🇺🇸 USD ($)</option>
+                                <option value="EUR" {% if original_input and original_input.get('currency') == 'EUR' %}selected{% endif %}>🇪🇺 EUR (€)</option>
+                                <option value="GBP" {% if original_input and original_input.get('currency') == 'GBP' %}selected{% endif %}>🇬🇧 GBP (£)</option>
+                                <option value="MYR" {% if original_input and original_input.get('currency') == 'MYR' %}selected{% endif %}>🇲🇾 MYR (RM)</option>
+                                <option value="JPY" {% if original_input and original_input.get('currency') == 'JPY' %}selected{% endif %}>🇯🇵 JPY (¥)</option>
+                                <option value="CAD" {% if original_input and original_input.get('currency') == 'CAD' %}selected{% endif %}>🇨🇦 CAD ($)</option>
+                                <option value="AUD" {% if original_input and original_input.get('currency') == 'AUD' %}selected{% endif %}>🇦🇺 AUD ($)</option>
+                                <option value="SGD" {% if original_input and original_input.get('currency') == 'SGD' %}selected{% endif %}>🇸🇬 SGD ($)</option>
+                                <option value="PHP" {% if original_input and original_input.get('currency') == 'PHP' %}selected{% endif %}>🇵🇭 PHP (₱)</option>
+                                <option value="IDR" {% if original_input and original_input.get('currency') == 'IDR' %}selected{% endif %}>🇮🇩 IDR (Rp)</option>
+                                <option value="THB" {% if original_input and original_input.get('currency') == 'THB' %}selected{% endif %}>🇹🇭 THB (฿)</option>
+                                <option value="VND" {% if original_input and original_input.get('currency') == 'VND' %}selected{% endif %}>🇻🇳 VND (₫)</option>
+                                <option value="KRW" {% if original_input and original_input.get('currency') == 'KRW' %}selected{% endif %}>🇰🇷 KRW (₩)</option>
+                                <option value="CNY" {% if original_input and original_input.get('currency') == 'CNY' %}selected{% endif %}>🇨🇳 CNY (¥)</option>
+                                <option value="INR" {% if original_input and original_input.get('currency') == 'INR' %}selected{% endif %}>🇮🇳 INR (₹)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Base Price with dynamic label -->
                         <div class="col-md-6 mb-3">
                             <label class="form-label" style="white-space: nowrap;">
-                                Base Price ($)
-                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Planned base price at launch (in USD)."></i>
+                                <span id="priceLabel">Base Price ($)</span>
+                                <i class="bi bi-info-circle ms-1" data-bs-toggle="tooltip" title="Enter the planned base price at launch."></i>
                             </label>
-                            <input type="number" min="0" name="base_price" class="form-control" required
-                                value="{{ original_input['base_price'] if original_input else '0' }}">
+                            <input type="number" min="0" step="0.01" name="base_price" class="form-control" required
+                                value="{{ original_input['price_local'] if original_input else '0' }}" id="basePriceInput">
                         </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">
                                 Release Month
@@ -394,14 +720,12 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
     
     <script>
-        // --- Scroll Progress Bar ---
         window.onscroll = function() {
             const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
             const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
             const scrolled = (winScroll / height) * 100;
             document.getElementById("scrollProgress").style.width = scrolled + "%";
             
-            // Scroll to top button
             const btn = document.getElementById("scrollTopBtn");
             if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
                 btn.style.display = "block";
@@ -415,7 +739,6 @@
             document.documentElement.scrollTop = 0;
         }
 
-        // --- Navbar Scroll Effect ---
         document.addEventListener('scroll', function() {
             const nav = document.getElementById('mainNav');
             if (window.scrollY > 50) {
@@ -425,7 +748,6 @@
             }
         });
 
-        // --- Typewriter Effect for Hero Text ---
         document.addEventListener('DOMContentLoaded', function() {
             const heroText = document.getElementById('heroText');
             if (heroText) {
@@ -442,29 +764,18 @@
                 }
                 typeWriter();
             }
-        });
 
-        // --- Initialize Tooltips ---
-        document.addEventListener('DOMContentLoaded', function() {
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
-        });
 
-        // --- Initialize Chart.js (With Relative Percentages) ---
-        document.addEventListener('DOMContentLoaded', function() {
             const influencers = {{ top_influencers | tojson | safe if top_influencers else '[]' }};
             const canvasElement = document.getElementById('driversChart');
             
-            // Only draw if we have data and the canvas exists
             if (influencers.length > 0 && canvasElement) {
                 const ctx = canvasElement.getContext('2d');
-                
-                // 1. Calculate the total weight of ONLY the top 3 drivers
                 const totalWeight = influencers.reduce((sum, inf) => sum + inf.weight, 0);
-                
-                // 2. Extract labels and convert raw weights into a relative percentage (0-100%)
                 const labels = influencers.map(inf => '#' + inf.name);
                 const dataWeights = influencers.map(inf => Math.round((inf.weight / totalWeight) * 100));
 
@@ -515,7 +826,6 @@
                 });
             }
 
-            // --- Particle Burst Effect on Prediction ---
             const predictionResult = document.getElementById('predictionResult');
             if (predictionResult) {
                 const burstContainer = document.getElementById('particleBurst');
@@ -536,7 +846,6 @@
                 }
             }
 
-            // --- Form Submit Loading State ---
             const form = document.getElementById('predictForm');
             if (form) {
                 form.addEventListener('submit', function() {
@@ -548,9 +857,43 @@
                     btn.disabled = true;
                 });
             }
+
+            // Currency Selector - Dynamic Price Label
+            const currencySelect = document.getElementById('currencySelect');
+            const priceLabel = document.getElementById('priceLabel');
+            
+            if (currencySelect && priceLabel) {
+                const currencySymbols = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'MYR': 'RM',
+                    'JPY': '¥',
+                    'CAD': '$',
+                    'AUD': '$',
+                    'SGD': '$',
+                    'PHP': '₱',
+                    'IDR': 'Rp',
+                    'THB': '฿',
+                    'VND': '₫',
+                    'KRW': '₩',
+                    'CNY': '¥',
+                    'INR': '₹'
+                };
+                
+                // Set initial label
+                const initialCurrency = currencySelect.value || 'USD';
+                const initialSymbol = currencySymbols[initialCurrency] || '$';
+                priceLabel.textContent = `Base Price (${initialSymbol})`;
+                
+                currencySelect.addEventListener('change', function() {
+                    const currency = this.value;
+                    const symbol = currencySymbols[currency] || '$';
+                    priceLabel.textContent = `Base Price (${symbol})`;
+                });
+            }
         });
 
-        // --- Smooth Scroll for Nav Links ---
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();

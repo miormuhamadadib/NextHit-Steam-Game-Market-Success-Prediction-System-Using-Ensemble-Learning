@@ -10,116 +10,398 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" type="image/png">
     
+    <style>
+        /* --- OVERRIDE FOR NO SCROLL --- */
+        .table-responsive {
+            overflow-x: visible !important;
+        }
+        
+        .history-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        
+        .history-table th,
+        .history-table td {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        
+        /* Column Widths - Total 100% */
+        .history-table th:nth-child(1), .history-table td:nth-child(1) { width: 10%; }
+        .history-table th:nth-child(2), .history-table td:nth-child(2) { width: 8%; }
+        .history-table th:nth-child(3), .history-table td:nth-child(3) { width: 15%; }
+        .history-table th:nth-child(4), .history-table td:nth-child(4) { width: 18%; }
+        .history-table th:nth-child(5), .history-table td:nth-child(5) { width: 13%; }
+        .history-table th:nth-child(6), .history-table td:nth-child(6) { width: 13%; }
+        .history-table th:nth-child(7), .history-table td:nth-child(7) { width: 15%; }
+        .history-table th:nth-child(8), .history-table td:nth-child(8) { width: 8%; }
+        
+        .history-table td {
+            font-size: 0.78rem !important;
+            padding: 8px 6px !important;
+        }
+        
+        .history-table th {
+            font-size: 0.68rem !important;
+            padding: 8px 6px !important;
+        }
+        
+        .history-table .badge-tier {
+            font-size: 0.6rem !important;
+            padding: 3px 10px !important;
+            white-space: nowrap !important;
+            display: inline-block !important;
+        }
+        
+        .history-table .progress {
+            width: 40px !important;
+            height: 4px !important;
+        }
+        
+        .history-table .btn-bookmark {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 0.8rem !important;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid #333;
+            border-radius: 6px;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .history-table .btn-bookmark:hover {
+            border-color: #555;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .history-table .btn-bookmark.active {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+            transform: translateY(0) scale(1.05);
+        }
+        
+        .history-table .btn-bookmark.active:hover {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .history-table .btn-outline-danger {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 0.8rem !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .search-input-group .input-group-text {
+            background: #252525 !important;
+            border-color: #444 !important;
+            color: #a0a0a0 !important;
+            font-size: 0.7rem !important;
+        }
+        
+        .search-input-group .form-control {
+            background: #252525 !important;
+            border-color: #444 !important;
+            color: #fff !important;
+            font-size: 0.7rem !important;
+            padding: 4px 10px !important;
+        }
+        
+        .search-input-group .btn {
+            font-size: 0.7rem !important;
+            padding: 4px 10px !important;
+        }
+        
+        @media (max-width: 768px) {
+            .history-table th:nth-child(1), .history-table td:nth-child(1) { width: 8%; }
+            .history-table th:nth-child(2), .history-table td:nth-child(2) { width: 7%; }
+            .history-table th:nth-child(3), .history-table td:nth-child(3) { width: 14%; }
+            .history-table th:nth-child(4), .history-table td:nth-child(4) { width: 15%; }
+            .history-table th:nth-child(5), .history-table td:nth-child(5) { width: 12%; }
+            .history-table th:nth-child(6), .history-table td:nth-child(6) { width: 12%; }
+            .history-table th:nth-child(7), .history-table td:nth-child(7) { width: 14%; }
+            .history-table th:nth-child(8), .history-table td:nth-child(8) { width: 8%; }
+            
+            .history-table td {
+                font-size: 0.65rem !important;
+                padding: 6px 3px !important;
+            }
+            
+            .history-table th {
+                font-size: 0.55rem !important;
+                padding: 6px 3px !important;
+            }
+            
+            .history-table .badge-tier {
+                font-size: 0.5rem !important;
+                padding: 2px 6px !important;
+            }
+            
+            .history-table .progress {
+                width: 30px !important;
+                height: 3px !important;
+            }
+        }
+    </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/#">
-                        
-                        <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="60" height="60" class="me-2 rounded">
-                        
-                        NEXT<span style="color: var(--accent)">HIT</span>
-                    </a>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav align-items-center">
-                    <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
-                    
-                    {% if session.get('loggedin') %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                        
+<nav class="navbar navbar-expand-lg sticky-top" id="mainNav">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold text-white d-flex align-items-center" href="/">
+            <img src="{{ url_for('static', filename='NEXTHIT_LOGO.png') }}" alt="NextHit Logo" width="50" height="50" class="me-2 rounded">
+            NEXT<span style="color: var(--accent)">HIT</span>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" href="/#home">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#logic">How it Works</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#results-preview">What You Get</a></li>
+                <li class="nav-item"><a class="nav-link" href="/#predict">Predict</a></li>
+
+                {% if session.get('loggedin') %}
+                    <li class="nav-item">
                         {% if session.get('role') == 'admin' %}
-                            <li class="nav-item"><a class="nav-link text-warning fw-bold" href="{{ url_for('history') }}"><i class="bi bi-shield-lock me-1"></i>Admin</a></li>
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                        {% else %}
+                            <a class="nav-link active" href="{{ url_for('dashboard') }}">Dashboard</a>
                         {% endif %}
-                        
-                        <li class="nav-item ms-lg-3">
-                            <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 6px 16px;">Logout</a>
-                        </li>
-                    {% else %}
-                        <li class="nav-item ms-lg-3">
-                            <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 6px 16px;">Login</a>
+                    </li>
+                    
+                    {% if session.get('role') == 'admin' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-warning fw-bold" href="#" id="adminDropdown" role="button" 
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-shield-lock me-1"></i>Admin
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                                    <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('admin_users') }}">
+                                    <i class="bi bi-people me-2"></i>Users
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('model_performance') }}">
+                                    <i class="bi bi-graph-up me-2"></i>Model Performance
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('feature_importance') }}">
+                                    <i class="bi bi-bar-chart me-2"></i>Feature Importance
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('history') }}">
+                                    <i class="bi bi-clock-history me-2"></i>All Predictions
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('system_health') }}">
+                                    <i class="bi bi-heart-pulse me-2"></i>System Health
+                                </a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('export_data') }}">
+                                    <i class="bi bi-download me-2"></i>Export Data
+                                </a></li>
+                            </ul>
                         </li>
                     {% endif %}
-                </ul>
-            </div>
+                    
+                    <li class="nav-item ms-2">
+                        <a class="nav-link fw-bold" href="{{ url_for('logout') }}" style="color: #ff4c4c !important; border: 1px solid #ff4c4c; border-radius: 6px; padding: 8px 20px;">Logout</a>
+                    </li>
+                {% else %}
+                    <li class="nav-item ms-2">
+                        <a class="nav-link fw-bold" href="{{ url_for('login') }}" style="color: #121212 !important; background-color: var(--accent); border-radius: 6px; padding: 8px 24px;">Login</a>
+                    </li>
+                {% endif %} 
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
+
     <section>
-        <div class="container" style="max-width: 1000px; padding-bottom: 50px;">
+        <div class="container" style="max-width: 1200px; padding-bottom: 50px; padding-top: 20px;">
             
-            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 40px;">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-4" style="margin-bottom: 30px;">
                 <div>
-                    <h2 class="fw-bold m-0" style="color: var(--text-main);">Developer Dashboard</h2>
-                    <p style="color: var(--text-dim); margin-top: 5px;">Welcome back, <span class="text-white fw-bold">{{ username }}</span>.</p>
+                    <h2 class="fw-bold m-0" style="color: var(--text-main);">
+                        <i class="bi bi-speedometer2 me-2" style="color: var(--accent);"></i>Developer Dashboard
+                    </h2>
+                    <p style="color: var(--text-dim); margin-top: 5px;">
+                        Welcome back, <span class="text-white fw-bold">{{ username }}</span>. 
+                        <span class="text-dim" style="font-size: 0.85rem;">| {{ total_runs }} predictions total</span>
+                    </p>
                 </div>
-            </div>
-
-            <div class="row mb-5 g-4">
-                <div class="col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ total_runs }}</div>
-                        <div class="stat-label">Total Predictions Run</div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="stat-card">
-                        <div class="stat-number">{{ high_success }}</div>
-                        <div class="stat-label">High Success Ideas</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card p-4 p-md-5">
-                <h4 class="fw-bold mb-4" style="color: var(--text-main);">Prediction History</h4>
-
-                <!-- Filter Buttons -->
-                <div class="btn-group" role="group" aria-label="History Filter">
-                    <button type="button" class="btn btn-sm btn-outline-secondary active filter-btn" id="filter-all" onclick="filterHistory('all')" style="width: 80px;">All</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary filter-btn" id="filter-saved" onclick="filterHistory('saved')" style="width: 100px;">
-                        <i class="bi bi-bookmark-fill me-1"></i> Saved
+                <div>
+                    <a href="/#predict" class="btn btn-primary btn-sm me-2">
+                        <i class="bi bi-plus-circle me-1"></i>New Prediction
+                    </a>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="exportHistory()">
+                        <i class="bi bi-download me-1"></i>Export
                     </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <i class="bi bi-database stat-icon"></i>
+                        <div class="stat-number" style="font-size: 2.2rem;">{{ total_runs }}</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">Total Predictions</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <i class="bi bi-trophy stat-icon"></i>
+                        <div class="stat-number" style="font-size: 2.2rem;">{{ high_success }}</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">High Success</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <i class="bi bi-graph-up-arrow stat-icon"></i>
+                        <div class="stat-number" style="font-size: 2.2rem;">
+                            {% if total_runs > 0 %}
+                                {{ (high_success / total_runs * 100)|round(1) }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </div>
+                        <div class="stat-label" style="font-size: 0.7rem;">Success Rate</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card" style="padding: 20px;">
+                        <i class="bi bi-star stat-icon"></i>
+                        <div class="stat-number" style="font-size: 2.2rem;">{{ history|selectattr('is_bookmarked', 'equalto', 1)|list|length }}</div>
+                        <div class="stat-label" style="font-size: 0.7rem;">Bookmarked</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter & Search -->
+            <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                    <div class="d-flex gap-1 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-secondary active" id="filter-all" onclick="filterHistory('all')" style="font-size: 0.65rem; padding: 3px 10px;">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-saved" onclick="filterHistory('saved')" style="font-size: 0.65rem; padding: 3px 10px;">
+                            <i class="bi bi-bookmark-fill me-1" style="color: var(--accent); font-size: 0.55rem;"></i>Bookmarked
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-high" onclick="filterHistory('high')" style="font-size: 0.65rem; padding: 3px 10px;">
+                            <span class="badge-tier tier-high" style="font-size: 0.4rem; padding: 1px 6px;">High</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-moderate" onclick="filterHistory('moderate')" style="font-size: 0.65rem; padding: 3px 10px;">
+                            <span class="badge-tier tier-moderate" style="font-size: 0.4rem; padding: 1px 6px;">Moderate</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="filter-low" onclick="filterHistory('low')" style="font-size: 0.65rem; padding: 3px 10px;">
+                            <span class="badge-tier tier-low" style="font-size: 0.4rem; padding: 1px 6px;">Low</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group input-group-sm search-input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search" style="font-size: 0.7rem;"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search by genres or tags..." 
+                               onkeyup="searchHistory()">
+                        <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('searchInput').value='';searchHistory();">
+                            <i class="bi bi-x-lg" style="font-size: 0.6rem;"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction History Table -->
+            <div class="card p-3 p-md-4" style="background: var(--card-bg); border: 1px solid #333;">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h5 class="fw-bold mb-0" style="color: var(--text-main);">
+                        <i class="bi bi-clock-history me-2" style="color: var(--accent);"></i>Prediction History
+                    </h5>
                 </div>
                 
                 {% if history %}
-                <div class="table-responsive" style="margin-top: 40px;">
-                    <table class="history-table">
+                <div class="table-responsive" style="overflow-x: visible !important;">
+                    <table class="history-table" id="historyTable">
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Base Price</th>
-                                <th>Genres & Tags</th>
-                                <th>Predicted Tier</th>
-                                <th><!-- Empty header for the bookmark icon --></th>
+                                <th>Price</th>
+                                <th>Genres</th>
+                                <th>Tags</th>
+                                <th>Result</th>
+                                <th>Confidence</th>
+                                <th>Top Drivers</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for row in history %}
-                            <tr class="history-row">
-                                </td>
-                                <td style="color: var(--text-dim); font-size: 0.9rem;">
+                            <tr class="history-row" data-tier="{{ row.prediction_result|lower|replace(' ', '') }}" data-bookmarked="{{ row.is_bookmarked }}">
+                                <td style="color: var(--text-dim); white-space: nowrap;">
                                     {{ row.created_at.strftime('%b %d, %Y') if row.created_at else 'N/A' }}
                                 </td>
-                                <td class="fw-bold" style="color: var(--accent);">${{ row.price }}</td>
-                                <td style="font-size: 0.85rem; color: #aaa;">
-                                    {{ row.genres | truncate(30) if row.genres else 'None' }} <br>
-                                    <span style="color: #666;">{{ row.tags | truncate(30) if row.tags else '' }}</span>
+                                <td class="fw-bold" style="color: var(--accent); white-space: nowrap;">
+                                    ${{ "%.2f"|format(row.price) }}
+                                </td>
+                                <td style="color: var(--text-main);">
+                                    {{ row.genres if row.genres else 'None' }}
+                                </td>
+                                <td style="color: var(--text-dim);">
+                                    {{ row.tags if row.tags else 'None' }}
                                 </td>
                                 <td>
-                                    {% if 'High' in row.prediction_result %}
-                                        <span class="badge-tier tier-high">High</span>
-                                    {% elif 'Moderate' in row.prediction_result %}
-                                        <span class="badge-tier tier-moderate">Moderate</span>
-                                    {% else %}
-                                        <span class="badge-tier tier-low">Low</span>
-                                    {% endif %}
+                                    <span class="badge-tier 
+                                        {% if 'High' in row.prediction_result %}tier-high
+                                        {% elif 'Moderate' in row.prediction_result %}tier-moderate
+                                        {% else %}tier-low{% endif %}">
+                                        {{ row.prediction_result }}
+                                    </span>
                                 </td>
                                 <td>
-                                    <button onclick="toggleBookmark({{ row['id'] }}, this)" class="btn-bookmark {% if row['is_bookmarked'] %}active{% endif %}">
-                                        <i class="bi {% if row['is_bookmarked'] %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
-                                    </button>
+                                    {% set conf = row.confidence|float %}
+                                    <div class="d-flex align-items-center gap-1">
+                                        <div class="progress" style="height: 4px; width: 40px; background-color: #333; border-radius: 10px;">
+                                            <div class="progress-bar" style="width: {{ conf }}%; 
+                                                background-color: {% if conf >= 80 %}#00ff88{% elif conf >= 50 %}#00d1ff{% else %}#ff4b2b{% endif %};
+                                                border-radius: 10px;">
+                                            </div>
+                                        </div>
+                                        <span style="font-size: 0.7rem; font-weight: 600; color: 
+                                            {% if conf >= 80 %}#00ff88
+                                            {% elif conf >= 50 %}#00d1ff
+                                            {% else %}#ff4b2b{% endif %};">
+                                            {{ "%.0f"|format(conf) }}%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td style="color: var(--text-dim);">
+                                    {{ row.top_drivers if row.top_drivers else 'N/A' }}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button onclick="toggleBookmark({{ row['id'] }}, this)" class="btn-bookmark {% if row['is_bookmarked'] %}active{% endif %}" title="Bookmark">
+                                            <i class="bi {% if row['is_bookmarked'] %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}"></i>
+                                        </button>
+                                        <button onclick="deletePrediction({{ row['id'] }})" class="btn btn-sm btn-outline-danger" title="Delete" style="width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-trash3" style="font-size: 0.8rem;"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -139,75 +421,146 @@
     </section>
 
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    function toggleBookmark(recordId, btnElement) {
-        // Ping the Flask route we made in app.py
-        fetch(`/toggle_bookmark/${recordId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const icon = btnElement.querySelector('i');
-                
-                // Toggle the CSS classes based on the database response
-                if (data.is_bookmarked) {
-                    btnElement.classList.add('active');
-                    icon.classList.remove('bi-bookmark');
-                    icon.classList.add('bi-bookmark-fill');
-                } else {
-                    btnElement.classList.remove('active');
-                    icon.classList.remove('bi-bookmark-fill');
-                    icon.classList.add('bi-bookmark');
+        // --- Toggle Bookmark ---
+        function toggleBookmark(recordId, btnElement) {
+            fetch(`/toggle_bookmark/${recordId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } else {
-                console.error("Server refused to bookmark:", data.message);
-                alert("Error updating bookmark.");
-            }
-        })
-        .catch(error => console.error('Network Error:', error));
-    }
-
-    function filterHistory(filterType) {
-        // 1. Update the button styles so the user knows which tab is active
-        const btnAll = document.getElementById('filter-all');
-        const btnSaved = document.getElementById('filter-saved');
-
-        if (filterType === 'all') {
-            btnAll.classList.add('active', 'text-white');
-            btnAll.style.backgroundColor = '#333';
-            btnSaved.classList.remove('active', 'text-white');
-            btnSaved.style.backgroundColor = 'transparent';
-        } else {
-            btnSaved.classList.add('active', 'text-white');
-            btnSaved.style.backgroundColor = '#333';
-            btnAll.classList.remove('active', 'text-white');
-            btnAll.style.backgroundColor = 'transparent';
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = btnElement.querySelector('i');
+                    const row = btnElement.closest('tr');
+                    
+                    if (data.is_bookmarked) {
+                        btnElement.classList.add('active');
+                        icon.classList.remove('bi-bookmark');
+                        icon.classList.add('bi-bookmark-fill');
+                        if (row) {
+                            row.dataset.bookmarked = '1';
+                        }
+                    } else {
+                        btnElement.classList.remove('active');
+                        icon.classList.remove('bi-bookmark-fill');
+                        icon.classList.add('bi-bookmark');
+                        if (row) {
+                            row.dataset.bookmarked = '0';
+                        }
+                    }
+                    
+                    if (currentFilter === 'saved') {
+                        filterHistory('saved');
+                    }
+                } else {
+                    alert("Error updating bookmark.");
+                }
+            })
+            .catch(error => console.error('Network Error:', error));
         }
 
-        // 2. Loop through every row and show/hide based on the bookmark status
-        const rows = document.querySelectorAll('.history-row');
-        
-        rows.forEach(row => {
-            if (filterType === 'all') {
-                // Show everything
-                row.style.display = ''; 
-            } else if (filterType === 'saved') {
-                // Check if the bookmark button inside this row has the "active" class
-                const bookmarkBtn = row.querySelector('.btn-bookmark');
-                if (bookmarkBtn && bookmarkBtn.classList.contains('active')) {
-                    row.style.display = ''; // Keep it visible
-                } else {
-                    row.style.display = 'none'; // Hide it instantly
+        // --- Delete Prediction ---
+        function deletePrediction(recordId) {
+            if (confirm('Delete this prediction?')) {
+                fetch(`/delete_prediction/${recordId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete prediction.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        // --- Export History ---
+        function exportHistory() {
+            window.location.href = '/export_user_history';
+        }
+
+        // --- Filter History ---
+        let currentFilter = 'all';
+
+        function filterHistory(filterType) {
+            currentFilter = filterType;
+            
+            const btnMap = {
+                'all': 'filter-all',
+                'saved': 'filter-saved',
+                'high': 'filter-high',
+                'moderate': 'filter-moderate',
+                'low': 'filter-low'
+            };
+            
+            Object.keys(btnMap).forEach(key => {
+                const btn = document.getElementById(btnMap[key]);
+                if (btn) {
+                    btn.classList.remove('active');
                 }
+            });
+            
+            const activeBtn = document.getElementById(btnMap[filterType]);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+            
+            const rows = document.querySelectorAll('.history-row');
+            rows.forEach(row => {
+                const tier = row.dataset.tier;
+                const bookmarked = row.dataset.bookmarked === '1';
+                
+                let show = true;
+                if (filterType === 'saved' && !bookmarked) show = false;
+                if (filterType === 'high' && tier !== 'highsuccess') show = false;
+                if (filterType === 'moderate' && tier !== 'moderatesuccess') show = false;
+                if (filterType === 'low' && tier !== 'lowsuccess') show = false;
+                
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        // --- Search History ---
+        function searchHistory() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('.history-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const visible = text.includes(query);
+                const tier = row.dataset.tier;
+                const bookmarked = row.dataset.bookmarked === '1';
+                let filterPass = true;
+                if (currentFilter === 'saved' && !bookmarked) filterPass = false;
+                if (currentFilter === 'high' && tier !== 'highsuccess') filterPass = false;
+                if (currentFilter === 'moderate' && tier !== 'moderatesuccess') filterPass = false;
+                if (currentFilter === 'low' && tier !== 'lowsuccess') filterPass = false;
+                
+                row.style.display = (visible && filterPass) ? '' : 'none';
+            });
+        }
+
+        // --- Enter key triggers search ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        searchHistory();
+                    }
+                });
             }
         });
-    }
-
     </script>
-
 </body>
 </html>

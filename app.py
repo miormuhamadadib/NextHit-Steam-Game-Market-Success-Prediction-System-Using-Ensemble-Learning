@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import mysql.connector
 import os
-from datetime import datetime
+from datetime import datetime, date
 import csv
 from io import StringIO
 # --- Forgot Password Routes ---
@@ -16,11 +16,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests  # For SendGrid API
+import json  # For JSON serialization
 
 app = Flask(__name__)
 
 # Required for using sessions
-app.secret_key = os.environ.get('SECRET_KEY', 'a_default_dev_key_if_missing')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key')
 
 @app.after_request
 def add_header(response):
@@ -39,6 +40,29 @@ model = None
 features = []
 genre_mapping = {}
 tags_mapping = {}
+
+# Add this at the top of app.py after imports
+EXCHANGE_RATES = {
+    'USD': 1.00,
+    'EUR': 0.92,
+    'GBP': 0.78,
+    'MYR': 4.65,
+    'JPY': 157.50,
+    'CAD': 1.37,
+    'AUD': 1.50,
+    'SGD': 1.34,
+    'PHP': 58.20,
+    'IDR': 16200.00,
+    'THB': 36.50,
+    'VND': 25400.00
+}
+
+def convert_to_usd(amount, currency):
+    """Convert an amount from the given currency to USD"""
+    if currency not in EXCHANGE_RATES:
+        return amount  # Default to USD if currency not found
+    rate = EXCHANGE_RATES[currency]
+    return amount / rate
 
 def get_file_path(filename):
     path_in_model = os.path.join(base_dir, 'model', filename)
@@ -176,12 +200,14 @@ def send_reset_email(user_email, username, reset_link):
         print(f"Email sending error: {e}")
         return False
 
-def save_to_db(user_id, price, genres, tags, result, drivers_str):
+def save_to_db(user_id, price, genres, tags, result, drivers_str, confidence):
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
-        query = "INSERT INTO predictions (user_id, price, genres, tags, prediction_result, top_drivers) VALUES (%s, %s, %s, %s, %s, %s)"
-        cursor.execute(query, (user_id, price, genres, tags, result, drivers_str))
+        query = """INSERT INTO predictions 
+                   (user_id, price, genres, tags, prediction_result, top_drivers, confidence) 
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+        cursor.execute(query, (user_id, price, genres, tags, result, drivers_str, confidence))
         conn.commit()
         cursor.close()
         conn.close()
@@ -236,9 +262,11 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
         csv_path = os.path.join(base_dir, 'steam_games_clean.csv')
         df_full = pd.read_csv(csv_path)
         
+        # --- 1. Filter by genre match ---
         def has_matching_genre(row_genres):
-            if not isinstance(row_genres, str): return False
-            game_genres = set(row_genres.split(', '))
+            if not isinstance(row_genres, str):
+                return False
+            game_genres = set(g.strip() for g in row_genres.split(','))
             user_genres = set(input_genres)
             return len(game_genres.intersection(user_genres)) > 0
 
@@ -250,20 +278,56 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
         else:
             genre_matches = df_full.copy()
 
-        price_mask = (genre_matches['Price'] >= input_price - 10) & (genre_matches['Price'] <= input_price + 10)
+        # --- 2. Price filter (wider range: ±15 instead of ±10) ---
+        price_mask = (genre_matches['Price'] >= max(0, input_price - 15)) & (genre_matches['Price'] <= input_price + 15)
         potential_matches = genre_matches[price_mask].copy()
 
         if potential_matches.empty:
+            # If no matches in price range, take all genre matches
             potential_matches = genre_matches.copy()
 
+        # --- 3. Calculate tag overlap ---
         def calculate_overlap(row_tags):
-            tags_list = row_tags.split(', ') if isinstance(row_tags, str) else []
-            overlap = set(tags_list) & set(input_genres + input_tags)
-            return len(overlap)
+            if not isinstance(row_tags, str):
+                return 0
+            game_tags = set(t.strip() for t in row_tags.split(','))
+            user_tags = set(input_genres + input_tags)
+            return len(game_tags.intersection(user_tags))
 
         potential_matches['match_score'] = potential_matches['Tags'].apply(calculate_overlap)
-        similar_games = potential_matches.sort_values(by=['match_score', 'Positive'], ascending=False).head(limit)
-        return similar_games.to_dict('records')
+        
+        # --- 4. Sort and select ---
+        # Sort by match_score first, then by Positive (if exists), then by Price similarity
+        if 'Positive' in potential_matches.columns:
+            similar_games = potential_matches.sort_values(
+                by=['match_score', 'Positive'], 
+                ascending=[False, False]
+            ).head(limit)
+        else:
+            similar_games = potential_matches.sort_values(
+                by=['match_score'], 
+                ascending=False
+            ).head(limit)
+
+        # --- 5. Clean up the results ---
+        result = similar_games.to_dict('records')
+        
+        # Ensure all required fields exist
+        for game in result:
+            # Fix Header image if missing
+            if 'Header image' not in game or pd.isna(game['Header image']):
+                game['Header image'] = None
+            
+            # Ensure Name exists
+            if 'Name' not in game or pd.isna(game['Name']):
+                game['Name'] = 'Unknown Game'
+            
+            # Ensure Price exists
+            if 'Price' not in game or pd.isna(game['Price']):
+                game['Price'] = 0.0
+        
+        return result
+        
     except Exception as e:
         print(f"Error fetching similar games: {e}")
         return []
@@ -288,7 +352,13 @@ def predict():
             return "<h1>Server Error</h1><p>The AI Model or Feature list failed to load during server startup. Please check your Python terminal logs to see which .pkl file is missing or corrupted.</p>", 500
 
         try:
-            price = float(request.form.get('price') or 0.0)
+            # ✅ Get currency and price
+            currency = request.form.get('currency', 'USD')
+            price_local = float(request.form.get('base_price') or 0.0)
+            
+            # ✅ Convert to USD for the model
+            price_usd = convert_to_usd(price_local, currency)
+            
             languages = int(request.form.get('languages') or 1)
             platforms = int(request.form.get('platforms') or 1)
             achievements = int(request.form.get('achievements') or 0)
@@ -296,7 +366,10 @@ def predict():
             devs = int(request.form.get('devs') or 1)
             month = int(request.form.get('month') or 1)
         except ValueError:
-            price, languages, platforms, achievements, dlc, devs, month = 0.0, 1, 1, 0, 0, 1, 1
+            currency = 'USD'
+            price_local = 0.0
+            price_usd = 0.0
+            languages, platforms, achievements, dlc, devs, month = 1, 1, 0, 0, 1, 1
 
         website = 1 if request.form.get('website') == 'on' else 0
         
@@ -305,7 +378,8 @@ def predict():
         genres_raw = ", ".join(genres_input)
         tags_raw = ", ".join(tags_input)
 
-        similar_games = get_similar_games(price, genres_input, tags_input)
+        # ✅ Use price_usd for similar games (converted to USD)
+        similar_games = get_similar_games(price_usd, genres_input, tags_input)
         
         def get_encoded_weight(items_list, mapping_dict):
             if not items_list: return 0.0
@@ -318,8 +392,9 @@ def predict():
         # BUILD THE 50-COLUMN DATAFRAME
         input_df = pd.DataFrame(0.0, index=[0], columns=features)
         
+        # ✅ Use price_usd for the model prediction
         safe_inject = {
-            'Price': price,
+            'Price': price_usd,
             'dev_count': float(devs),
             'has_website': float(website),
             'lang_count': float(languages),
@@ -355,7 +430,8 @@ def predict():
         recommendations = generate_recommendations(input_df, result, top_influencers)
 
         user_id = session.get('id')
-        save_to_db(user_id, price, genres_raw, tags_raw, result, drivers_str)
+        # ✅ Save the USD price to database for consistency
+        save_to_db(user_id, price_usd, genres_raw, tags_raw, result, drivers_str, confidence_score)
         
         return render_template('index.html', 
                                prediction_text=result,
@@ -364,12 +440,19 @@ def predict():
                                recommendations=recommendations,
                                similar_games=similar_games,
                                original_input={
-                                   'price': price, 'genres': genres_raw, 'tags': tags_raw,
-                                   'month': month, 'languages': languages, 'platforms': platforms,
-                                   'devs': devs, 'achievements': achievements, 'dlc': dlc, 
+                                   'base_price': price_usd,        # ✅ USD price used by model
+                                   'price_local': price_local,     # ✅ Original currency price
+                                   'currency': currency,           # ✅ Selected currency
+                                   'genres': genres_raw, 
+                                   'tags': tags_raw,
+                                   'month': month, 
+                                   'languages': languages, 
+                                   'platforms': platforms,
+                                   'devs': devs, 
+                                   'achievements': achievements, 
+                                   'dlc': dlc, 
                                    'website': request.form.get('website')
                                })
-
 @app.route('/reset')
 def reset():
     session.pop('prediction_text', None)
@@ -447,7 +530,11 @@ def dashboard():
     if 'loggedin' not in session:
         flash('Please log in to access your dashboard.', 'danger')
         return redirect(url_for('login'))
-        
+    
+    # ✅ If admin, redirect to admin dashboard
+    if session.get('role') == 'admin':
+        return redirect(url_for('admin_dashboard'))
+    
     user_id = session['id']
     username = session['username']
     
@@ -461,12 +548,12 @@ def dashboard():
     conn.close()
     
     total_runs = len(history)
-    high_success = sum(1 for p in history if p.get('prediction_result') == 'High Success') 
+    high_success = sum(1 for p in history if p.get('prediction_result') == 'High Success')
     
-    return render_template('dashboard.html', 
-                           username=username, 
-                           history=history, 
-                           total_runs=total_runs, 
+    return render_template('dashboard.html',
+                           username=username,
+                           history=history,
+                           total_runs=total_runs,
                            high_success=high_success)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -475,8 +562,14 @@ def register():
         username = request.form['username']
         email = request.form.get('email', '').strip()
         password = request.form['password']
+        confirm_password = request.form.get('confirm_password', '')
         
-        # Validate email
+        # --- Validate Username ---
+        if not username or len(username) < 3:
+            flash('Username must be at least 3 characters long.', 'danger')
+            return render_template('register.html')
+        
+        # --- Validate Email ---
         if not email:
             flash('Email address is required.', 'danger')
             return render_template('register.html')
@@ -484,6 +577,16 @@ def register():
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             flash('Please enter a valid email address.', 'danger')
+            return render_template('register.html')
+        
+        # --- Validate Password ---
+        if len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'danger')
+            return render_template('register.html')
+        
+        # --- ✅ NEW: Check if passwords match ---
+        if password != confirm_password:
+            flash('Passwords do not match!', 'danger')
             return render_template('register.html')
         
         hashed_password = generate_password_hash(password)
@@ -520,7 +623,6 @@ def login():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
-        
         cursor.close()
         conn.close()
         
@@ -528,8 +630,15 @@ def login():
             session['loggedin'] = True
             session['id'] = user['id']
             session['username'] = user['username']
-            session['role'] = user['role'] 
-            return redirect(url_for('dashboard'))
+            session['role'] = user['role']
+            
+            # ✅ Redirect based on role
+            if user['role'] == 'admin':
+                flash('Welcome Admin!', 'success')
+                return redirect(url_for('admin_dashboard'))  # This matches /admin/dashboard
+            else:
+                flash('Login successful!', 'success')
+                return redirect(url_for('dashboard'))
         else:
             flash('Incorrect username or password!', 'danger')
             
@@ -670,7 +779,7 @@ def reset_password(token):
     return render_template('reset_password.html', token=token)
 
 # ============================================
-# ADMIN ROUTES
+# ADMIN ROUTES (FIXED)
 # ============================================
 
 @app.route('/admin/dashboard')
@@ -682,52 +791,59 @@ def admin_dashboard():
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
     
-    # Total predictions
+    # --- 1. Total predictions ---
     cursor.execute("SELECT COUNT(*) as total FROM predictions")
-    total_predictions = cursor.fetchone()['total']
+    result = cursor.fetchone()
+    total_predictions = result['total'] if result else 0
     
-    # Total users
+    # --- 2. Total users ---
     cursor.execute("SELECT COUNT(*) as total FROM users")
-    total_users = cursor.fetchone()['total']
+    result = cursor.fetchone()
+    total_users = result['total'] if result else 0
     
-    # High success count
+    # --- 3. High success count ---
     cursor.execute("SELECT COUNT(*) as count FROM predictions WHERE prediction_result = 'High Success'")
-    high_success_count = cursor.fetchone()['count']
+    result = cursor.fetchone()
+    high_success_count = result['count'] if result else 0
     
-    # Today's predictions
+    # --- 4. Today's predictions ---
     cursor.execute("SELECT COUNT(*) as count FROM predictions WHERE DATE(created_at) = CURDATE()")
-    today_predictions = cursor.fetchone()['count']
+    result = cursor.fetchone()
+    today_predictions = result['count'] if result else 0
     
-    # Distribution
+    # --- 5. Distribution ---
     cursor.execute("""
         SELECT prediction_result, COUNT(*) as count 
         FROM predictions 
+        WHERE prediction_result IS NOT NULL
         GROUP BY prediction_result
     """)
-    distribution = cursor.fetchall()
+    distribution = cursor.fetchall() or []
     
-    # Daily activity (last 7 days)
+    # --- 6. Daily activity (last 7 days) ---
     cursor.execute("""
         SELECT DATE(created_at) as date, COUNT(*) as count 
         FROM predictions 
         WHERE created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) 
         GROUP BY DATE(created_at)
-        ORDER BY date
+        ORDER BY DATE(created_at)
     """)
-    daily_activity = cursor.fetchall()
+    daily_activity = cursor.fetchall() or []
     
-    # Top genres
+    # --- 7. Top genres ---
     cursor.execute("""
-        SELECT genres, COUNT(*) as count 
+        SELECT 
+            genres, 
+            COUNT(*) as count 
         FROM predictions 
-        WHERE genres != '' 
+        WHERE genres IS NOT NULL AND genres != '' 
         GROUP BY genres 
         ORDER BY COUNT(*) DESC 
         LIMIT 10
     """)
-    top_genres = cursor.fetchall()
+    top_genres = cursor.fetchall() or []
     
-    # User activity
+    # --- 8. User activity ---
     cursor.execute("""
         SELECT 
             u.id,
@@ -735,11 +851,11 @@ def admin_dashboard():
             u.role,
             COUNT(p.id) as prediction_count,
             (
-                SELECT prediction_result 
-                FROM predictions 
-                WHERE user_id = u.id 
-                GROUP BY prediction_result 
-                ORDER BY COUNT(*) DESC 
+                SELECT p2.prediction_result
+                FROM predictions p2
+                WHERE p2.user_id = u.id
+                GROUP BY p2.prediction_result
+                ORDER BY COUNT(*) DESC
                 LIMIT 1
             ) as most_common_result
         FROM users u 
@@ -748,7 +864,7 @@ def admin_dashboard():
         ORDER BY prediction_count DESC 
         LIMIT 10
     """)
-    user_activity = cursor.fetchall()
+    user_activity = cursor.fetchall() or []
     
     cursor.close()
     conn.close()
@@ -756,14 +872,16 @@ def admin_dashboard():
     # Get last updated time
     last_updated = datetime.now().strftime('%H:%M:%S')
     
+    # ✅ PASS THE DATA AS LISTS (NOT JSON STRINGS)
+    # The template will use |tojson to convert them
     return render_template('admin_dashboard.html',
                          total_predictions=total_predictions,
                          total_users=total_users,
                          high_success_count=high_success_count,
                          today_predictions=today_predictions,
-                         distribution=distribution,
-                         daily_activity=daily_activity,
-                         top_genres=top_genres,
+                         distribution=distribution,        # ✅ Pass as list
+                         daily_activity=daily_activity,    # ✅ Pass as list
+                         top_genres=top_genres,            # ✅ Pass as list
                          user_activity=user_activity,
                          last_updated=last_updated)
 
@@ -856,7 +974,13 @@ def view_user(user_id):
         flash('User not found', 'danger')
         return redirect(url_for('admin_users'))
     
-    cursor.execute("SELECT * FROM predictions WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+    cursor.execute("""
+        SELECT id, created_at, price, genres, tags, prediction_result, 
+               confidence, top_drivers, is_bookmarked 
+        FROM predictions 
+        WHERE user_id = %s 
+        ORDER BY created_at DESC
+    """, (user_id,))
     predictions = cursor.fetchall()
     
     cursor.close()
@@ -878,7 +1002,7 @@ def model_performance():
         SELECT 
             prediction_result,
             COUNT(*) as count,
-            ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM predictions), 2) as percentage
+            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT COUNT(*) FROM predictions), 0), 2) as percentage
         FROM predictions
         GROUP BY prediction_result
     """)
@@ -943,17 +1067,20 @@ def system_health():
         cursor = conn.cursor(dictionary=True)
         
         cursor.execute("SELECT COUNT(*) as total FROM predictions")
-        health_data['total_predictions'] = cursor.fetchone()['total']
+        result = cursor.fetchone()
+        health_data['total_predictions'] = result['total'] if result else 0
         
         cursor.execute("SELECT COUNT(DISTINCT user_id) as count FROM predictions")
-        health_data['unique_users'] = cursor.fetchone()['count']
+        result = cursor.fetchone()
+        health_data['unique_users'] = result['count'] if result else 0
         
         cursor.execute("""
             SELECT COUNT(*) as count 
             FROM predictions 
             WHERE created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
         """)
-        health_data['last_24h_predictions'] = cursor.fetchone()['count']
+        result = cursor.fetchone()
+        health_data['last_24h_predictions'] = result['count'] if result else 0
         
         # Check if we can connect to the database
         health_data['database_status'] = 'Connected'
