@@ -1,3 +1,37 @@
+# ============================================
+# ⚠️ ULTIMATE XGBOOST COMPATIBILITY PATCH
+# MUST BE AT THE VERY TOP OF THE FILE
+# ============================================
+
+# Patch XGBoost BEFORE anything else loads it
+import sys
+
+# Create a fake XGBoost module with the missing attributes
+class PatchedXGBClassifier:
+    use_label_encoder = False
+    gpu_id = -1
+
+# Monkey-patch the actual XGBoost classes
+try:
+    import xgboost as xgb
+    
+    # Patch the class itself
+    if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
+        xgb.XGBClassifier.use_label_encoder = False
+    if not hasattr(xgb.XGBClassifier, 'gpu_id'):
+        xgb.XGBClassifier.gpu_id = -1
+    
+    # Also patch the Booster class
+    if hasattr(xgb, 'Booster'):
+        if not hasattr(xgb.Booster, 'gpu_id'):
+            xgb.Booster.gpu_id = -1
+    
+    print("✅ XGBoost patched successfully!")
+except ImportError:
+    print("⚠️ XGBoost not yet installed, will patch later")
+
+
+
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 import joblib
