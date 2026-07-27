@@ -17,6 +17,9 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import requests  # For SendGrid API
 import json  # For JSON serialization
+import pickle
+import warnings
+warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 
@@ -64,8 +67,6 @@ def convert_to_usd(amount, currency):
     rate = EXCHANGE_RATES[currency]
     return amount / rate
 
-base_dir = os.path.dirname(os.path.abspath(__file__))
-
 def get_file_path(filename):
     path_in_model = os.path.join(base_dir, 'model', filename)
     path_in_root = os.path.join(base_dir, filename)
@@ -111,9 +112,61 @@ model_path = get_file_path('final_steam_model_tuned.pkl')
 features_path = get_file_path('final_model_features_optimized.pkl')
 mappings_path = get_file_path('target_encoding_mappings.pkl')
 
+# ============================================
+# FIX: Load model with XGBoost compatibility
+# ============================================
+def load_model_with_compatibility(filepath):
+    """Load a model with compatibility fixes for XGBoost version mismatches"""
+    try:
+        # First attempt: Try loading with joblib (preferred)
+        print(f"🔄 Attempting to load with joblib: {filepath}")
+        loaded_model = joblib.load(filepath)
+        print("✅ Model loaded with joblib")
+        
+        # FIX: Handle XGBoost use_label_encoder issue
+        if hasattr(loaded_model, 'get_params'):
+            params = loaded_model.get_params()
+            if 'use_label_encoder' in params:
+                print("🔄 Removing 'use_label_encoder' parameter for compatibility")
+                del params['use_label_encoder']
+                loaded_model.set_params(**params)
+            # Also set device to CPU for compatibility
+            if hasattr(loaded_model, 'set_params'):
+                loaded_model.set_params(device='cpu')
+        
+        return loaded_model
+        
+    except Exception as e:
+        print(f"⚠️ Joblib loading failed: {e}")
+        
+        try:
+            # Second attempt: Try loading with pickle
+            print(f"🔄 Attempting to load with pickle: {filepath}")
+            with open(filepath, 'rb') as f:
+                loaded_model = pickle.load(f)
+            print("✅ Model loaded with pickle")
+            
+            # FIX: Handle XGBoost use_label_encoder issue
+            if hasattr(loaded_model, 'get_params'):
+                params = loaded_model.get_params()
+                if 'use_label_encoder' in params:
+                    print("🔄 Removing 'use_label_encoder' parameter for compatibility")
+                    del params['use_label_encoder']
+                    loaded_model.set_params(**params)
+                if hasattr(loaded_model, 'set_params'):
+                    loaded_model.set_params(device='cpu')
+            
+            return loaded_model
+            
+        except Exception as e2:
+            print(f"❌ Both loading methods failed: {e2}")
+            raise e2
+
 try:
-    model = joblib.load(model_path)
-    model.set_params(device='cpu') 
+    # Load model with compatibility fixes
+    model = load_model_with_compatibility(model_path)
+    
+    # Load features and mappings (these don't have compatibility issues)
     features = joblib.load(features_path)
     mappings = joblib.load(mappings_path)
     
@@ -125,6 +178,9 @@ try:
         raise ValueError("Features file loaded successfully, but it was empty!")
         
     print("✅ NextHit AI Engine Loaded Successfully!")
+    print(f"📊 Model type: {type(model).__name__}")
+    print(f"📊 Number of features: {len(features)}")
+    
 except Exception as e:
     # THE FIX: If ANYTHING fails, reset the model to None so the server safely blocks predictions
     model = None 
