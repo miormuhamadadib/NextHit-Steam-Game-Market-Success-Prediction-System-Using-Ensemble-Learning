@@ -115,17 +115,29 @@ mappings_path = get_file_path('target_encoding_mappings.pkl')
 # ============================================
 # FIX: Load model with XGBoost compatibility
 # ============================================
+d# ============================================
+# FIX: Load model with XGBoost compatibility
+# ============================================
 def load_model_with_compatibility(filepath):
     """Load a model with compatibility fixes for XGBoost version mismatches"""
     try:
         # 🔥 THE FIX: Patch XGBoost before loading
         import xgboost as xgb
         
-        # Create a dummy attribute if it doesn't exist
+        # Patch 1: Add missing use_label_encoder
         if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
-            print("🔄 Patching XGBoost to add missing use_label_encoder attribute")
-            # Add the attribute as a property that always returns False
+            print("🔄 Patching XGBoost: adding use_label_encoder attribute")
             xgb.XGBClassifier.use_label_encoder = False
+        
+        # Patch 2: Add missing gpu_id attribute
+        if not hasattr(xgb.XGBClassifier, 'gpu_id'):
+            print("🔄 Patching XGBoost: adding gpu_id attribute")
+            xgb.XGBClassifier.gpu_id = -1  # -1 means use CPU
+            
+        # Also patch the underlying Booster class
+        if hasattr(xgb, 'Booster'):
+            if not hasattr(xgb.Booster, 'gpu_id'):
+                xgb.Booster.gpu_id = -1
         
         # Now try loading with joblib
         print(f"🔄 Attempting to load with joblib: {filepath}")
@@ -135,10 +147,13 @@ def load_model_with_compatibility(filepath):
         # Clean up any lingering parameters
         if hasattr(loaded_model, 'get_params'):
             params = loaded_model.get_params()
-            if 'use_label_encoder' in params:
-                print("🔄 Removing 'use_label_encoder' parameter from model")
-                del params['use_label_encoder']
-                loaded_model.set_params(**params)
+            # Remove problematic parameters
+            for param in ['use_label_encoder', 'gpu_id']:
+                if param in params:
+                    print(f"🔄 Removing '{param}' parameter from model")
+                    del params[param]
+            loaded_model.set_params(**params)
+            
             # Set device to CPU for compatibility
             if hasattr(loaded_model, 'set_params'):
                 loaded_model.set_params(device='cpu')
@@ -158,10 +173,11 @@ def load_model_with_compatibility(filepath):
             # Clean up any lingering parameters
             if hasattr(loaded_model, 'get_params'):
                 params = loaded_model.get_params()
-                if 'use_label_encoder' in params:
-                    print("🔄 Removing 'use_label_encoder' parameter from model")
-                    del params['use_label_encoder']
-                    loaded_model.set_params(**params)
+                for param in ['use_label_encoder', 'gpu_id']:
+                    if param in params:
+                        print(f"🔄 Removing '{param}' parameter from model")
+                        del params[param]
+                loaded_model.set_params(**params)
                 if hasattr(loaded_model, 'set_params'):
                     loaded_model.set_params(device='cpu')
             
@@ -170,7 +186,6 @@ def load_model_with_compatibility(filepath):
         except Exception as e2:
             print(f"❌ Both loading methods failed: {e2}")
             raise e2
-
 try:
     # Load model with compatibility fixes
     model = load_model_with_compatibility(model_path)
