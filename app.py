@@ -141,7 +141,7 @@ except Exception as e:
     import traceback
     traceback.print_exc()
     print("="*50 + "\n")
-    
+
 # 2. Database Configuration
 db_config = {
     'host': 'localhost',
@@ -655,6 +655,156 @@ def register():
             conn.close()
             
     return render_template('register.html')
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'loggedin' not in session:
+        flash('Please log in to access your profile.', 'danger')
+        return redirect(url_for('login'))
+    
+    user_id = session['id']
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor(dictionary=True)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        # --- Change Username ---
+        if action == 'update_username':
+            new_username = request.form.get('username', '').strip()
+            
+            if len(new_username) < 3:
+                flash('Username must be at least 3 characters long.', 'danger')
+            else:
+                # Check if username already exists
+                cursor.execute("SELECT id FROM users WHERE username = %s AND id != %s", (new_username, user_id))
+                if cursor.fetchone():
+                    flash('Username already taken. Please choose another.', 'danger')
+                else:
+                    cursor.execute("UPDATE users SET username = %s WHERE id = %s", (new_username, user_id))
+                    conn.commit()
+                    session['username'] = new_username
+                    flash('Username updated successfully!', 'success')
+        
+        # --- Change Email ---
+        elif action == 'update_email':
+            new_email = request.form.get('email', '').strip()
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            
+            if not re.match(email_pattern, new_email):
+                flash('Please enter a valid email address.', 'danger')
+            else:
+                cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s", (new_email, user_id))
+                if cursor.fetchone():
+                    flash('Email already registered to another account.', 'danger')
+                else:
+                    cursor.execute("UPDATE users SET email = %s WHERE id = %s", (new_email, user_id))
+                    conn.commit()
+                    flash('Email updated successfully!', 'success')
+        
+        # --- Change Password ---
+        elif action == 'update_password':
+            current_password = request.form.get('current_password')
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+            
+            # Verify current password
+            cursor.execute("SELECT password FROM users WHERE id = %s", (user_id,))
+            user = cursor.fetchone()
+            
+            if not check_password_hash(user['password'], current_password):
+                flash('Current password is incorrect.', 'danger')
+            elif len(new_password) < 8:
+                flash('New password must be at least 8 characters long.', 'danger')
+            elif new_password != confirm_password:
+                flash('New passwords do not match.', 'danger')
+            else:
+                hashed_password = generate_password_hash(new_password)
+                cursor.execute("UPDATE users SET password = %s WHERE id = %s", (hashed_password, user_id))
+                conn.commit()
+                flash('Password updated successfully!', 'success')
+        
+        # --- Delete Account ---
+        elif action == 'delete_account':
+            confirm_delete = request.form.get('confirm_delete')
+            if confirm_delete == 'DELETE':
+                # Delete predictions first
+                cursor.execute("DELETE FROM predictions WHERE user_id = %s", (user_id,))
+                cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+                conn.commit()
+                session.clear()
+                flash('Your account has been deleted.', 'success')
+                return redirect(url_for('home'))
+            else:
+                flash('Type "DELETE" to confirm account deletion.', 'danger')
+        
+        return redirect(url_for('profile'))
+    
+    # GET request - fetch user data
+    cursor.execute("SELECT id, username, email, role, created_at FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
+    return render_template('profile.html', user=user)
+
+@app.route('/delete_prediction/<int:record_id>', methods=['POST'])
+def delete_prediction(record_id):
+    if 'loggedin' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    user_id = session['id']
+    
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM predictions WHERE id = %s AND user_id = %s", (record_id, user_id))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/export_user_history')
+def export_user_history():
+    if 'loggedin' not in session:
+        flash('Please log in first.', 'danger')
+        return redirect(url_for('login'))
+    
+    user_id = session['id']
+    
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
+            SELECT created_at, price, genres, tags, prediction_result, confidence, top_drivers 
+            FROM predictions 
+            WHERE user_id = %s 
+            ORDER BY created_at DESC
+        """, (user_id,))
+        data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        
+        if not data:
+            flash('No predictions to export.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        df = pd.DataFrame(data)
+        if 'created_at' in df.columns:
+            df['created_at'] = pd.to_datetime(df['created_at']).dt.strftime('%Y-%m-%d %H:%M:%S')
+        
+        csv_buffer = StringIO()
+        df.to_csv(csv_buffer, index=False)
+        
+        response = make_response(csv_buffer.getvalue())
+        response.headers["Content-Disposition"] = "attachment; filename=my_predictions.csv"
+        response.headers["Content-type"] = "text/csv"
+        return response
+    except Exception as e:
+        flash(f'Error exporting data: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
