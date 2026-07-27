@@ -18,6 +18,22 @@ from email.mime.multipart import MIMEMultipart
 import requests  # For SendGrid API
 import json  # For JSON serialization
 
+# ============================================
+# XGBOOST COMPATIBILITY PATCH
+# ============================================
+import xgboost as xgb
+
+# Patch XGBoost to handle old model attributes
+if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
+    xgb.XGBClassifier.use_label_encoder = False
+if not hasattr(xgb.XGBClassifier, 'gpu_id'):
+    xgb.XGBClassifier.gpu_id = -1
+if hasattr(xgb, 'Booster') and not hasattr(xgb.Booster, 'gpu_id'):
+    xgb.Booster.gpu_id = -1
+
+print("✅ XGBoost patched for compatibility")
+
+
 app = Flask(__name__)
 
 # Required for using sessions
