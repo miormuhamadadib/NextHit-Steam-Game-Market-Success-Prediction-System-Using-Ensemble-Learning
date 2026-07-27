@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+.gitignore
+.DS_Store
+*.log
+steam_games_clean.csv
+*.pkl
