@@ -115,9 +115,7 @@ mappings_path = get_file_path('target_encoding_mappings.pkl')
 # ============================================
 # FIX: Load model with XGBoost compatibility
 # ============================================
-d# ============================================
-# FIX: Load model with XGBoost compatibility
-# ============================================
+
 def load_model_with_compatibility(filepath):
     """Load a model with compatibility fixes for XGBoost version mismatches"""
     try:
