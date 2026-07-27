@@ -64,12 +64,48 @@ def convert_to_usd(amount, currency):
     rate = EXCHANGE_RATES[currency]
     return amount / rate
 
+base_dir = os.path.dirname(os.path.abspath(__file__))
+
 def get_file_path(filename):
     path_in_model = os.path.join(base_dir, 'model', filename)
     path_in_root = os.path.join(base_dir, filename)
-    if os.path.exists(path_in_model): return path_in_model
-    if os.path.exists(path_in_root): return path_in_root
-    return path_in_model # Fallback
+    
+    # ============================================
+    # DEBUG: Print everything to Render logs
+    # ============================================
+    print(f"🔍 Looking for: {filename}")
+    print(f"   base_dir = {base_dir}")
+    print(f"   Checking path_in_model: {path_in_model}")
+    print(f"   Exists? {os.path.exists(path_in_model)}")
+    print(f"   Checking path_in_root: {path_in_root}")
+    print(f"   Exists? {os.path.exists(path_in_root)}")
+    
+    # List all files in the current directory to see what's there
+    print(f"📁 Files in {base_dir}:")
+    for f in os.listdir(base_dir):
+        print(f"   - {f}")
+    
+    # Check if 'model' folder exists and list its contents
+    model_folder = os.path.join(base_dir, 'model')
+    if os.path.exists(model_folder):
+        print(f"📁 Files in model folder:")
+        for f in os.listdir(model_folder):
+            print(f"   - {f}")
+    else:
+        print("❌ 'model' folder NOT FOUND!")
+    
+    # ============================================
+    # Return the path if found
+    # ============================================
+    if os.path.exists(path_in_model):
+        print(f"✅ Found in model folder: {path_in_model}")
+        return path_in_model
+    if os.path.exists(path_in_root):
+        print(f"✅ Found in root: {path_in_root}")
+        return path_in_root
+    
+    print(f"❌ ERROR: Could not find {filename} anywhere!")
+    return path_in_model  # Fallback
 
 model_path = get_file_path('final_steam_model_tuned.pkl')
 features_path = get_file_path('final_model_features_optimized.pkl')
