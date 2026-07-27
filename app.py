@@ -118,19 +118,28 @@ mappings_path = get_file_path('target_encoding_mappings.pkl')
 def load_model_with_compatibility(filepath):
     """Load a model with compatibility fixes for XGBoost version mismatches"""
     try:
-        # First attempt: Try loading with joblib (preferred)
+        # 🔥 THE FIX: Patch XGBoost before loading
+        import xgboost as xgb
+        
+        # Create a dummy attribute if it doesn't exist
+        if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
+            print("🔄 Patching XGBoost to add missing use_label_encoder attribute")
+            # Add the attribute as a property that always returns False
+            xgb.XGBClassifier.use_label_encoder = False
+        
+        # Now try loading with joblib
         print(f"🔄 Attempting to load with joblib: {filepath}")
         loaded_model = joblib.load(filepath)
         print("✅ Model loaded with joblib")
         
-        # FIX: Handle XGBoost use_label_encoder issue
+        # Clean up any lingering parameters
         if hasattr(loaded_model, 'get_params'):
             params = loaded_model.get_params()
             if 'use_label_encoder' in params:
-                print("🔄 Removing 'use_label_encoder' parameter for compatibility")
+                print("🔄 Removing 'use_label_encoder' parameter from model")
                 del params['use_label_encoder']
                 loaded_model.set_params(**params)
-            # Also set device to CPU for compatibility
+            # Set device to CPU for compatibility
             if hasattr(loaded_model, 'set_params'):
                 loaded_model.set_params(device='cpu')
         
@@ -140,17 +149,17 @@ def load_model_with_compatibility(filepath):
         print(f"⚠️ Joblib loading failed: {e}")
         
         try:
-            # Second attempt: Try loading with pickle
+            # Second attempt: Try loading with pickle with the patch still active
             print(f"🔄 Attempting to load with pickle: {filepath}")
             with open(filepath, 'rb') as f:
                 loaded_model = pickle.load(f)
             print("✅ Model loaded with pickle")
             
-            # FIX: Handle XGBoost use_label_encoder issue
+            # Clean up any lingering parameters
             if hasattr(loaded_model, 'get_params'):
                 params = loaded_model.get_params()
                 if 'use_label_encoder' in params:
-                    print("🔄 Removing 'use_label_encoder' parameter for compatibility")
+                    print("🔄 Removing 'use_label_encoder' parameter from model")
                     del params['use_label_encoder']
                     loaded_model.set_params(**params)
                 if hasattr(loaded_model, 'set_params'):
