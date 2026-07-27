@@ -1,37 +1,3 @@
-# ============================================
-# ⚠️ ULTIMATE XGBOOST COMPATIBILITY PATCH
-# MUST BE AT THE VERY TOP OF THE FILE
-# ============================================
-
-# Patch XGBoost BEFORE anything else loads it
-import sys
-
-# Create a fake XGBoost module with the missing attributes
-class PatchedXGBClassifier:
-    use_label_encoder = False
-    gpu_id = -1
-
-# Monkey-patch the actual XGBoost classes
-try:
-    import xgboost as xgb
-    
-    # Patch the class itself
-    if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
-        xgb.XGBClassifier.use_label_encoder = False
-    if not hasattr(xgb.XGBClassifier, 'gpu_id'):
-        xgb.XGBClassifier.gpu_id = -1
-    
-    # Also patch the Booster class
-    if hasattr(xgb, 'Booster'):
-        if not hasattr(xgb.Booster, 'gpu_id'):
-            xgb.Booster.gpu_id = -1
-    
-    print("✅ XGBoost patched successfully!")
-except ImportError:
-    print("⚠️ XGBoost not yet installed, will patch later")
-
-
-
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 import joblib
@@ -68,7 +34,7 @@ def add_header(response):
     return response
 
 # --------------------------
-# 1. LOAD THE NEW AI ARTIFACTS
+# 1. LOAD THE AI ARTIFACTS
 # --------------------------
 base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -78,7 +44,7 @@ features = []
 genre_mapping = {}
 tags_mapping = {}
 
-# Add this at the top of app.py after imports
+# Exchange rates for currency conversion
 EXCHANGE_RATES = {
     'USD': 1.00,
     'EUR': 0.92,
@@ -105,9 +71,6 @@ def get_file_path(filename):
     path_in_model = os.path.join(base_dir, 'model', filename)
     path_in_root = os.path.join(base_dir, filename)
     
-    # ============================================
-    # DEBUG: Print everything to Render logs
-    # ============================================
     print(f"🔍 Looking for: {filename}")
     print(f"   base_dir = {base_dir}")
     print(f"   Checking path_in_model: {path_in_model}")
@@ -115,12 +78,10 @@ def get_file_path(filename):
     print(f"   Checking path_in_root: {path_in_root}")
     print(f"   Exists? {os.path.exists(path_in_root)}")
     
-    # List all files in the current directory to see what's there
     print(f"📁 Files in {base_dir}:")
     for f in os.listdir(base_dir):
         print(f"   - {f}")
     
-    # Check if 'model' folder exists and list its contents
     model_folder = os.path.join(base_dir, 'model')
     if os.path.exists(model_folder):
         print(f"📁 Files in model folder:")
@@ -129,9 +90,6 @@ def get_file_path(filename):
     else:
         print("❌ 'model' folder NOT FOUND!")
     
-    # ============================================
-    # Return the path if found
-    # ============================================
     if os.path.exists(path_in_model):
         print(f"✅ Found in model folder: {path_in_model}")
         return path_in_model
@@ -147,89 +105,24 @@ features_path = get_file_path('final_model_features_optimized.pkl')
 mappings_path = get_file_path('target_encoding_mappings.pkl')
 
 # ============================================
-# FIX: Load model with XGBoost compatibility
+# LOAD MODEL (Simple version - no patches needed)
 # ============================================
-
-def load_model_with_compatibility(filepath):
-    """Load a model with compatibility fixes for XGBoost version mismatches"""
-    try:
-        # 🔥 THE FIX: Patch XGBoost before loading
-        import xgboost as xgb
-        
-        # Patch 1: Add missing use_label_encoder
-        if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
-            print("🔄 Patching XGBoost: adding use_label_encoder attribute")
-            xgb.XGBClassifier.use_label_encoder = False
-        
-        # Patch 2: Add missing gpu_id attribute
-        if not hasattr(xgb.XGBClassifier, 'gpu_id'):
-            print("🔄 Patching XGBoost: adding gpu_id attribute")
-            xgb.XGBClassifier.gpu_id = -1  # -1 means use CPU
-            
-        # Also patch the underlying Booster class
-        if hasattr(xgb, 'Booster'):
-            if not hasattr(xgb.Booster, 'gpu_id'):
-                xgb.Booster.gpu_id = -1
-        
-        # Now try loading with joblib
-        print(f"🔄 Attempting to load with joblib: {filepath}")
-        loaded_model = joblib.load(filepath)
-        print("✅ Model loaded with joblib")
-        
-        # Clean up any lingering parameters
-        if hasattr(loaded_model, 'get_params'):
-            params = loaded_model.get_params()
-            # Remove problematic parameters
-            for param in ['use_label_encoder', 'gpu_id']:
-                if param in params:
-                    print(f"🔄 Removing '{param}' parameter from model")
-                    del params[param]
-            loaded_model.set_params(**params)
-            
-            # Set device to CPU for compatibility
-            if hasattr(loaded_model, 'set_params'):
-                loaded_model.set_params(device='cpu')
-        
-        return loaded_model
-        
-    except Exception as e:
-        print(f"⚠️ Joblib loading failed: {e}")
-        
-        try:
-            # Second attempt: Try loading with pickle with the patch still active
-            print(f"🔄 Attempting to load with pickle: {filepath}")
-            with open(filepath, 'rb') as f:
-                loaded_model = pickle.load(f)
-            print("✅ Model loaded with pickle")
-            
-            # Clean up any lingering parameters
-            if hasattr(loaded_model, 'get_params'):
-                params = loaded_model.get_params()
-                for param in ['use_label_encoder', 'gpu_id']:
-                    if param in params:
-                        print(f"🔄 Removing '{param}' parameter from model")
-                        del params[param]
-                loaded_model.set_params(**params)
-                if hasattr(loaded_model, 'set_params'):
-                    loaded_model.set_params(device='cpu')
-            
-            return loaded_model
-            
-        except Exception as e2:
-            print(f"❌ Both loading methods failed: {e2}")
-            raise e2
 try:
-    # Load model with compatibility fixes
-    model = load_model_with_compatibility(model_path)
+    print(f"🔄 Loading model from: {model_path}")
+    model = joblib.load(model_path)
+    print("✅ Model loaded successfully!")
     
-    # Load features and mappings (these don't have compatibility issues)
+    print(f"🔄 Loading features from: {features_path}")
     features = joblib.load(features_path)
+    print(f"✅ Features loaded: {len(features)} features")
+    
+    print(f"🔄 Loading mappings from: {mappings_path}")
     mappings = joblib.load(mappings_path)
+    print("✅ Mappings loaded successfully!")
     
     genre_mapping = mappings.get('genres', {})
     tags_mapping = mappings.get('tags', {})
     
-    # Strict verification
     if len(features) == 0:
         raise ValueError("Features file loaded successfully, but it was empty!")
         
@@ -238,7 +131,6 @@ try:
     print(f"📊 Number of features: {len(features)}")
     
 except Exception as e:
-    # THE FIX: If ANYTHING fails, reset the model to None so the server safely blocks predictions
     model = None 
     features = []
     print("\n" + "="*50)
@@ -256,15 +148,12 @@ db_config = {
 }
 
 # 3. SendGrid Email Configuration
-# Get your SendGrid API Key from: https://app.sendgrid.com/settings/api_keys
-# Free tier: 100 emails/day
 SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
 SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL')
 
 def send_reset_email(user_email, username, reset_link):
     """Send password reset email using SendGrid API"""
     try:
-        # SendGrid API endpoint
         url = "https://api.sendgrid.com/v3/mail/send"
         
         headers = {
@@ -272,7 +161,6 @@ def send_reset_email(user_email, username, reset_link):
             "Content-Type": "application/json"
         }
         
-        # Email content
         data = {
             "personalizations": [
                 {
@@ -366,11 +254,9 @@ def save_to_db(user_id, price, genres, tags, result, drivers_str, confidence):
 def generate_recommendations(input_df, prediction_text, top_influencers):
     recs = []
     
-    # --- 1. Top Driver Advice ---
-    if top_influencers: # Simplified check for non-empty list
+    if top_influencers:
         top_driver = top_influencers[0]['name']
         
-        # This structure is more maintainable and avoids repeating the intro sentence.
         advice_snippets = {
             'Multiplayer': "Multiplayer games live or die by server stability. Prioritize a closed beta to stress-test your netcode before launch.",
             'Singleplayer': "Singleplayer success relies heavily on pacing and replayability. Consider adding a 'New Game+' mode or branching narratives.",
@@ -384,22 +270,17 @@ def generate_recommendations(input_df, prediction_text, top_influencers):
             'Simulation': "Simulation fans value realism and depth. Highlight the complexity of your physics or management systems in your marketing."
         }
         
-        # Get the specific advice snippet, or use a generic fallback.
         advice_body = advice_snippets.get(
             top_driver, 
             "Ensure your marketing materials explicitly highlight this aspect of your game."
         )
         
-        # Combine the intro with the specific advice body.
         full_advice = f"Your market potential is heavily anchored by the #{top_driver} feature. {advice_body}"
         recs.append(full_advice)
 
-    # --- 2. General Improvement Advice (for non-High predictions) ---
     if 'High' not in prediction_text:
-        # Check if the number of languages is low.
         if 'lang_count' in input_df.columns and input_df['lang_count'].iloc[0] < 3:
             recs.append("Localization Gap: You are supporting fewer than 3 languages. Translating your UI/Subtitles into Spanish or Simplified Chinese historically boosts sales by up to 30%.")
-        # Check if a website is missing.
         if 'has_website' in input_df.columns and input_df['has_website'].iloc[0] == 0:
             recs.append("Missing Hub: Games without official websites often struggle to build pre-launch mailing lists. Set up a simple landing page to capture emails.")
 
@@ -410,7 +291,6 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
         csv_path = os.path.join(base_dir, 'steam_games_clean.csv')
         df_full = pd.read_csv(csv_path)
         
-        # --- 1. Filter by genre match ---
         def has_matching_genre(row_genres):
             if not isinstance(row_genres, str):
                 return False
@@ -426,15 +306,12 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
         else:
             genre_matches = df_full.copy()
 
-        # --- 2. Price filter (wider range: ±15 instead of ±10) ---
         price_mask = (genre_matches['Price'] >= max(0, input_price - 15)) & (genre_matches['Price'] <= input_price + 15)
         potential_matches = genre_matches[price_mask].copy()
 
         if potential_matches.empty:
-            # If no matches in price range, take all genre matches
             potential_matches = genre_matches.copy()
 
-        # --- 3. Calculate tag overlap ---
         def calculate_overlap(row_tags):
             if not isinstance(row_tags, str):
                 return 0
@@ -444,8 +321,6 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
 
         potential_matches['match_score'] = potential_matches['Tags'].apply(calculate_overlap)
         
-        # --- 4. Sort and select ---
-        # Sort by match_score first, then by Positive (if exists), then by Price similarity
         if 'Positive' in potential_matches.columns:
             similar_games = potential_matches.sort_values(
                 by=['match_score', 'Positive'], 
@@ -457,20 +332,13 @@ def get_similar_games(input_price, input_genres, input_tags, limit=3):
                 ascending=False
             ).head(limit)
 
-        # --- 5. Clean up the results ---
         result = similar_games.to_dict('records')
         
-        # Ensure all required fields exist
         for game in result:
-            # Fix Header image if missing
             if 'Header image' not in game or pd.isna(game['Header image']):
                 game['Header image'] = None
-            
-            # Ensure Name exists
             if 'Name' not in game or pd.isna(game['Name']):
                 game['Name'] = 'Unknown Game'
-            
-            # Ensure Price exists
             if 'Price' not in game or pd.isna(game['Price']):
                 game['Price'] = 0.0
         
@@ -495,16 +363,12 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        # THE FIX: Prevent silent crashes. This guarantees we don't feed 0 columns to the AI.
         if model is None or len(features) == 0:
             return "<h1>Server Error</h1><p>The AI Model or Feature list failed to load during server startup. Please check your Python terminal logs to see which .pkl file is missing or corrupted.</p>", 500
 
         try:
-            # ✅ Get currency and price
             currency = request.form.get('currency', 'USD')
             price_local = float(request.form.get('base_price') or 0.0)
-            
-            # ✅ Convert to USD for the model
             price_usd = convert_to_usd(price_local, currency)
             
             languages = int(request.form.get('languages') or 1)
@@ -526,7 +390,6 @@ def predict():
         genres_raw = ", ".join(genres_input)
         tags_raw = ", ".join(tags_input)
 
-        # ✅ Use price_usd for similar games (converted to USD)
         similar_games = get_similar_games(price_usd, genres_input, tags_input)
         
         def get_encoded_weight(items_list, mapping_dict):
@@ -537,10 +400,8 @@ def predict():
         genre_w = get_encoded_weight(genres_input, genre_mapping)
         tag_w = get_encoded_weight(tags_input, tags_mapping)
 
-        # BUILD THE 50-COLUMN DATAFRAME
         input_df = pd.DataFrame(0.0, index=[0], columns=features)
         
-        # ✅ Use price_usd for the model prediction
         safe_inject = {
             'Price': price_usd,
             'dev_count': float(devs),
@@ -559,7 +420,6 @@ def predict():
             if item in input_df.columns:
                 input_df.at[0, item] = 1.0
         
-        # MAKE THE PREDICTION
         prediction_idx = int(model.predict(input_df.values)[0])
         probabilities = model.predict_proba(input_df.values)[0]
         confidence_score = float(round(max(probabilities) * 100, 2))
@@ -578,7 +438,6 @@ def predict():
         recommendations = generate_recommendations(input_df, result, top_influencers)
 
         user_id = session.get('id')
-        # ✅ Save the USD price to database for consistency
         save_to_db(user_id, price_usd, genres_raw, tags_raw, result, drivers_str, confidence_score)
         
         return render_template('index.html', 
@@ -588,9 +447,9 @@ def predict():
                                recommendations=recommendations,
                                similar_games=similar_games,
                                original_input={
-                                   'base_price': price_usd,        # ✅ USD price used by model
-                                   'price_local': price_local,     # ✅ Original currency price
-                                   'currency': currency,           # ✅ Selected currency
+                                   'base_price': price_usd,
+                                   'price_local': price_local,
+                                   'currency': currency,
                                    'genres': genres_raw, 
                                    'tags': tags_raw,
                                    'month': month, 
@@ -601,6 +460,7 @@ def predict():
                                    'dlc': dlc, 
                                    'website': request.form.get('website')
                                })
+
 @app.route('/reset')
 def reset():
     session.pop('prediction_text', None)
@@ -679,7 +539,6 @@ def dashboard():
         flash('Please log in to access your dashboard.', 'danger')
         return redirect(url_for('login'))
     
-    # ✅ If admin, redirect to admin dashboard
     if session.get('role') == 'admin':
         return redirect(url_for('admin_dashboard'))
     
@@ -712,12 +571,10 @@ def register():
         password = request.form['password']
         confirm_password = request.form.get('confirm_password', '')
         
-        # --- Validate Username ---
         if not username or len(username) < 3:
             flash('Username must be at least 3 characters long.', 'danger')
             return render_template('register.html')
         
-        # --- Validate Email ---
         if not email:
             flash('Email address is required.', 'danger')
             return render_template('register.html')
@@ -727,12 +584,10 @@ def register():
             flash('Please enter a valid email address.', 'danger')
             return render_template('register.html')
         
-        # --- Validate Password ---
         if len(password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
             return render_template('register.html')
         
-        # --- ✅ NEW: Check if passwords match ---
         if password != confirm_password:
             flash('Passwords do not match!', 'danger')
             return render_template('register.html')
@@ -780,10 +635,9 @@ def login():
             session['username'] = user['username']
             session['role'] = user['role']
             
-            # ✅ Redirect based on role
             if user['role'] == 'admin':
                 flash('Welcome Admin!', 'success')
-                return redirect(url_for('admin_dashboard'))  # This matches /admin/dashboard
+                return redirect(url_for('admin_dashboard'))
             else:
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
@@ -810,7 +664,6 @@ def forgot_password():
             flash('Please enter your email address.', 'danger')
             return render_template('forgot_password.html')
         
-        # Validate email format
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, email):
             flash('Please enter a valid email address.', 'danger')
@@ -819,22 +672,18 @@ def forgot_password():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
         
-        # Check if user exists with this email
         cursor.execute("SELECT id, username FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
         
         if not user:
             cursor.close()
             conn.close()
-            # Don't reveal if email exists or not (security)
             flash('If an account with that email exists, we\'ve sent a password reset link.', 'success')
             return render_template('forgot_password.html')
         
-        # Generate reset token
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now() + timedelta(hours=1)
         
-        # Store token in database
         cursor.execute("""
             INSERT INTO password_reset_tokens (user_id, token, expires_at)
             VALUES (%s, %s, %s)
@@ -844,7 +693,6 @@ def forgot_password():
         cursor.close()
         conn.close()
         
-        # Send reset email using SendGrid
         reset_link = url_for('reset_password', token=token, _external=True)
         email_sent = send_reset_email(email, user['username'], reset_link)
         
@@ -862,7 +710,6 @@ def reset_password(token):
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
     
-    # Validate token
     cursor.execute("""
         SELECT user_id, expires_at, used 
         FROM password_reset_tokens 
@@ -876,7 +723,6 @@ def reset_password(token):
         conn.close()
         return redirect(url_for('login'))
     
-    # Check if token is expired or used
     if token_data['used']:
         flash('This password reset link has already been used.', 'danger')
         cursor.close()
@@ -893,7 +739,6 @@ def reset_password(token):
         new_password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
         
-        # Validate password
         if len(new_password) < 8:
             flash('Password must be at least 8 characters long.', 'danger')
             cursor.close()
@@ -906,12 +751,10 @@ def reset_password(token):
             conn.close()
             return render_template('reset_password.html', token=token)
         
-        # Update password
         hashed_password = generate_password_hash(new_password)
         cursor.execute("UPDATE users SET password = %s WHERE id = %s", 
                       (hashed_password, token_data['user_id']))
         
-        # Mark token as used
         cursor.execute("UPDATE password_reset_tokens SET used = TRUE WHERE token = %s", (token,))
         conn.commit()
         
@@ -927,7 +770,7 @@ def reset_password(token):
     return render_template('reset_password.html', token=token)
 
 # ============================================
-# ADMIN ROUTES (FIXED)
+# ADMIN ROUTES
 # ============================================
 
 @app.route('/admin/dashboard')
@@ -939,27 +782,22 @@ def admin_dashboard():
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
     
-    # --- 1. Total predictions ---
     cursor.execute("SELECT COUNT(*) as total FROM predictions")
     result = cursor.fetchone()
     total_predictions = result['total'] if result else 0
     
-    # --- 2. Total users ---
     cursor.execute("SELECT COUNT(*) as total FROM users")
     result = cursor.fetchone()
     total_users = result['total'] if result else 0
     
-    # --- 3. High success count ---
     cursor.execute("SELECT COUNT(*) as count FROM predictions WHERE prediction_result = 'High Success'")
     result = cursor.fetchone()
     high_success_count = result['count'] if result else 0
     
-    # --- 4. Today's predictions ---
     cursor.execute("SELECT COUNT(*) as count FROM predictions WHERE DATE(created_at) = CURDATE()")
     result = cursor.fetchone()
     today_predictions = result['count'] if result else 0
     
-    # --- 5. Distribution ---
     cursor.execute("""
         SELECT prediction_result, COUNT(*) as count 
         FROM predictions 
@@ -968,7 +806,6 @@ def admin_dashboard():
     """)
     distribution = cursor.fetchall() or []
     
-    # --- 6. Daily activity (last 7 days) ---
     cursor.execute("""
         SELECT DATE(created_at) as date, COUNT(*) as count 
         FROM predictions 
@@ -978,7 +815,6 @@ def admin_dashboard():
     """)
     daily_activity = cursor.fetchall() or []
     
-    # --- 7. Top genres ---
     cursor.execute("""
         SELECT 
             genres, 
@@ -991,7 +827,6 @@ def admin_dashboard():
     """)
     top_genres = cursor.fetchall() or []
     
-    # --- 8. User activity ---
     cursor.execute("""
         SELECT 
             u.id,
@@ -1017,19 +852,16 @@ def admin_dashboard():
     cursor.close()
     conn.close()
     
-    # Get last updated time
     last_updated = datetime.now().strftime('%H:%M:%S')
     
-    # ✅ PASS THE DATA AS LISTS (NOT JSON STRINGS)
-    # The template will use |tojson to convert them
     return render_template('admin_dashboard.html',
                          total_predictions=total_predictions,
                          total_users=total_users,
                          high_success_count=high_success_count,
                          today_predictions=today_predictions,
-                         distribution=distribution,        # ✅ Pass as list
-                         daily_activity=daily_activity,    # ✅ Pass as list
-                         top_genres=top_genres,            # ✅ Pass as list
+                         distribution=distribution,
+                         daily_activity=daily_activity,
+                         top_genres=top_genres,
                          user_activity=user_activity,
                          last_updated=last_updated)
 
@@ -1094,7 +926,6 @@ def delete_user(user_id):
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
         
-        # Delete user's predictions first (foreign key constraint)
         cursor.execute("DELETE FROM predictions WHERE user_id = %s", (user_id,))
         cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
         conn.commit()
@@ -1145,7 +976,6 @@ def model_performance():
     conn = mysql.connector.connect(**db_config)
     cursor = conn.cursor(dictionary=True)
     
-    # Get prediction distribution with counts
     cursor.execute("""
         SELECT 
             prediction_result,
@@ -1156,7 +986,6 @@ def model_performance():
     """)
     distribution = cursor.fetchall()
     
-    # Get monthly trends
     cursor.execute("""
         SELECT 
             DATE_FORMAT(created_at, '%Y-%m') as month,
@@ -1182,11 +1011,8 @@ def feature_importance():
         flash('Access Denied', 'danger')
         return redirect(url_for('dashboard'))
     
-    # Get feature importance from your model
     if model is not None and hasattr(model, 'feature_importances_'):
-        # Convert numpy.float32 to Python float
         importance_dict = dict(zip(features, model.feature_importances_))
-        # Convert all values to Python float
         importance_dict = {k: float(v) for k, v in importance_dict.items()}
         sorted_importance = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)[:20]
         return render_template('feature_importance.html', features=sorted_importance)
@@ -1230,7 +1056,6 @@ def system_health():
         result = cursor.fetchone()
         health_data['last_24h_predictions'] = result['count'] if result else 0
         
-        # Check if we can connect to the database
         health_data['database_status'] = 'Connected'
         
         cursor.close()
@@ -1238,7 +1063,6 @@ def system_health():
     except Exception as e:
         health_data['database_status'] = f'Error: {str(e)}'
     
-    # Get server uptime (Unix style - from when the server started)
     try:
         import psutil
         import time
@@ -1263,7 +1087,6 @@ def export_data():
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor(dictionary=True)
         
-        # Export all predictions with user info
         cursor.execute("""
             SELECT 
                 p.id,
@@ -1284,10 +1107,8 @@ def export_data():
         cursor.close()
         conn.close()
         
-        # Create CSV
         df = pd.DataFrame(data)
         
-        # Format datetime columns
         if 'created_at' in df.columns:
             df['created_at'] = pd.to_datetime(df['created_at']).dt.strftime('%Y-%m-%d %H:%M:%S')
         
