@@ -19,19 +19,31 @@ import requests  # For SendGrid API
 import json  # For JSON serialization
 
 # ============================================
-# XGBOOST COMPATIBILITY PATCH
+# XGBOOST COMPATIBILITY PATCH (FULL)
 # ============================================
 import xgboost as xgb
 
-# Patch XGBoost to handle old model attributes
+# Patch the XGBClassifier class
 if not hasattr(xgb.XGBClassifier, 'use_label_encoder'):
     xgb.XGBClassifier.use_label_encoder = False
 if not hasattr(xgb.XGBClassifier, 'gpu_id'):
     xgb.XGBClassifier.gpu_id = -1
-if hasattr(xgb, 'Booster') and not hasattr(xgb.Booster, 'gpu_id'):
-    xgb.Booster.gpu_id = -1
 
-print("✅ XGBoost patched for compatibility")
+# Patch the XGBModel class (this is the one causing the error)
+if hasattr(xgb, 'XGBModel'):
+    if not hasattr(xgb.XGBModel, 'gpu_id'):
+        xgb.XGBModel.gpu_id = -1
+    if not hasattr(xgb.XGBModel, 'use_label_encoder'):
+        xgb.XGBModel.use_label_encoder = False
+
+# Patch the Booster class
+if hasattr(xgb, 'Booster'):
+    if not hasattr(xgb.Booster, 'gpu_id'):
+        xgb.Booster.gpu_id = -1
+    if not hasattr(xgb.Booster, 'use_label_encoder'):
+        xgb.Booster.use_label_encoder = False
+
+print("✅ XGBoost fully patched for compatibility")
 
 
 app = Flask(__name__)
@@ -92,29 +104,44 @@ features_path = get_file_path('final_model_features_optimized.pkl')
 mappings_path = get_file_path('target_encoding_mappings.pkl')
 
 try:
+    # Load model with error handling
+    print(f"🔄 Loading model from: {model_path}")
     model = joblib.load(model_path)
-    model.set_params(device='cpu') 
+    print("✅ Model loaded successfully!")
+    
+    # Clean up any lingering parameters
+    if hasattr(model, 'get_params'):
+        params = model.get_params()
+        for bad_param in ['use_label_encoder', 'gpu_id']:
+            if bad_param in params:
+                print(f"🔄 Removing '{bad_param}' parameter")
+                del params[bad_param]
+        model.set_params(**params)
+        model.set_params(device='cpu')
+    
     features = joblib.load(features_path)
     mappings = joblib.load(mappings_path)
     
     genre_mapping = mappings.get('genres', {})
     tags_mapping = mappings.get('tags', {})
     
-    # Strict verification
     if len(features) == 0:
         raise ValueError("Features file loaded successfully, but it was empty!")
         
     print("✅ NextHit AI Engine Loaded Successfully!")
+    print(f"📊 Model type: {type(model).__name__}")
+    print(f"📊 Number of features: {len(features)}")
+    
 except Exception as e:
-    # THE FIX: If ANYTHING fails, reset the model to None so the server safely blocks predictions
     model = None 
     features = []
     print("\n" + "="*50)
     print(f"❌ CRITICAL ERROR: Could not load AI files!")
     print(f"Error Details: {e}")
-    print("Please ensure your three .pkl files are properly placed.")
+    import traceback
+    traceback.print_exc()
     print("="*50 + "\n")
-
+    
 # 2. Database Configuration
 db_config = {
     'host': 'localhost',
